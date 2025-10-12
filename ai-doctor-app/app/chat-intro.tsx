@@ -14,11 +14,11 @@ import { router } from 'expo-router';
 //  - Android Emulator: 10.0.2.2
 //  - Physical device: replace with your computer’s LAN IP (e.g., http://192.168.1.23:8000)
 // ------------------------------------------------------
-const BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:8000' // Android emulator -> host machine
-    : 'http://localhost:8000'; // iOS Simulator (or web). For real device: use LAN IP.
-
+// const BASE_URL =
+//   Platform.OS === 'android'
+//     ? 'http://10.0.2.2:8000' // Android emulator -> host machine
+//     : 'http://localhost:8000'; // iOS Simulator (or web). For real device: use LAN IP.
+const BASE_URL = 'https://ai-doctor-app.onrender.com';
 // ------------------------------------------------------
 // Step 3: Create a tiny POST helper with timeout + good errors
 //  - Uses AbortController to avoid requests hanging forever
@@ -27,7 +27,7 @@ const BASE_URL =
 async function postJSON(path: string, body: any, timeoutMs = 20000) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
-  
+
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
