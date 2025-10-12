@@ -134,7 +134,6 @@ def route_triage(inp: SymptomInput):
 def route_advice(inp: SymptomInput):
     triage = triage_rules(inp.symptoms)
     if triage.risk == "emergency":
-        # Always raise, never return None if blocked
         raise HTTPException(400, "Possible emergency. Call emergency services now.")
 
     def build_messages():
@@ -144,16 +143,8 @@ def route_advice(inp: SymptomInput):
             "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer."
         )
         user = (
-            f"Age: {inp.age}\nSex: {inp.sex}\nSymptoms: {inp.symptoms}\n"
-            f"Duration: {inp.duration}\nMeds: {inp.meds}\nConditions: {
-                inp.conditions
-            }\n"
-            "Schema example:\n"
-            "{"
-            '"advice":[{"step":"Hydration","details":"Small sips of water."}],'
-            '"when_to_seek_care":["Trouble breathing"],'
-            '"disclaimer":"This is not a diagnosis."'
-            "}"
+            f"Age: {inp.age}\nSex: {inp.sex}\nSymptoms: {inp.symptoms}\nDuration: {inp.duration}\nMeds: {inp.meds}\nConditions: {inp.conditions}\nSchema example:\n"
+            + '{"advice":[{"step":"Hydration","details":"Small sips of water."}],"when_to_seek_care":["Trouble breathing"],"disclaimer":"This is not a diagnosis."}'
         )
         return [
             {"role": "system", "content": system},
@@ -180,13 +171,8 @@ def route_referrals(inp: SymptomInput):
             "JSON ONLY; no patient instructions; no dosing."
         )
         user = (
-            f"Age: {inp.age}\nSymptoms: {inp.symptoms}\nConditions: {inp.conditions}\n"
-            "Schema example:\n"
-            "{"
-            '"suggested_specialties":[{"name":"Pulmonology","reason":"Chronic cough"}],'
-            '"pre_referral_workup":["Chest X-ray","Spirometry"],'
-            '"priority":"routine"'
-            "}"
+            f"Age: {inp.age}\nSymptoms: {inp.symptoms}\nConditions: {inp.conditions}\nSchema example:\n"
+            + '{"suggested_specialties":[{"name":"Pulmonology","reason":"Chronic cough"}],"pre_referral_workup":["Chest X-ray","Spirometry"],"priority":"routine"}'
         )
         return [
             {"role": "system", "content": system},
@@ -202,16 +188,8 @@ def route_rx(inp: SymptomInput):
     def build_messages():
         system = "Clinician-only medication class draft. No dosing. JSON ONLY."
         user = (
-            f"Age: {inp.age}\nSymptoms: {inp.symptoms}\nMeds: {inp.meds}\nConditions: {
-                inp.conditions
-            }\n"
-            "Schema example:\n"
-            "{"
-            '"candidates":[{"drug_class":"Inhaled corticosteroid","example":"budesonide DPI",'
-            '"use_case":"Persistent asthma","contraindications":["hypersensitivity"],'
-            '"monitoring":["symptom diary"]}],'
-            '"notes":"Draft for clinician review—do not display to patient."'
-            "}"
+            f"Age: {inp.age}\nSymptoms: {inp.symptoms}\nMeds: {inp.meds}\nConditions: {inp.conditions}\nSchema example:\n"
+            + '{"candidates":[{"drug_class":"Inhaled corticosteroid","example":"budesonide DPI","use_case":"Persistent asthma","contraindications":["hypersensitivity"],"monitoring":["symptom diary"]}],"notes":"Draft for clinician review—do not display to patient."}'
         )
         return [
             {"role": "system", "content": system},
