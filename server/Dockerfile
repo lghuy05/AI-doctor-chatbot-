@@ -35,7 +35,8 @@ EXPOSE 8000
 # ------------------------------------------------------
 # Step 7: Start the API (uvicorn). Swap to gunicorn if you prefer.
 # ------------------------------------------------------
-CMD ["python", "-m", "uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["python", "-m", "uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "main:app"]
 # Alternative:
 # CMD ["gunicorn", "-c", "server/gunicorn.conf.py", "server.main:app"]
     
