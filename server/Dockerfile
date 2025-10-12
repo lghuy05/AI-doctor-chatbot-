@@ -16,13 +16,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 # ------------------------------------------------------
 # Step 4: Install Python dependencies first (Docker cache friendly)
 # ------------------------------------------------------
-COPY server/requirements.txt ./server/requirements.txt
-RUN pip install --no-cache-dir -r server/requirements.txt
+# COPY server/requirements.txt ./server/requirements.txt
+# RUN pip install --no-cache-dir -r server/requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 
 # ------------------------------------------------------
 # Step 5: Copy the backend code into the container
 # ------------------------------------------------------
-COPY server ./server
+# COPY server ./server
 
 # ------------------------------------------------------
 # Step 6: Expose FastAPI port
