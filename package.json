@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "@expo/cli": "^54.0.10",
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
+}

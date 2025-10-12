@@ -1,0 +1,26 @@
+# ------------------------------------------------------
+# Step 1: Define the API service built from server/Dockerfile
+# ------------------------------------------------------
+version: "3.9"
+
+services:
+  api:
+    env_file:
+      - server/.env
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: api-1
+
+    # Step 2: Map container port 8000 to host port 8000
+    ports:
+      - "8000:8000"
+
+    # Step 3: Load environment variables from server/.env
+
+    # Step 4: Keep the service running unless stopped
+    restart: unless-stopped
+
+    # Step 5: Allow the container to reach host's services (e.g., Ollama)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
