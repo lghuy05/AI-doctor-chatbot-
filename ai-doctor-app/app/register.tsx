@@ -13,10 +13,10 @@ import { router } from 'expo-router';
 // ------------------------------------------------------
 export default function RegisterScreen() {
   // Step 2a: Track input values for each form field
-  const [name, setName] = useState('');
-  const [dob, setDob] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState<string>('');
+  const [dob, setDob] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string | number>('');
 
   // Step 2b: Simple validation — all fields must be filled,
   // email must look valid, and password >= 6 chars
@@ -34,7 +34,7 @@ export default function RegisterScreen() {
 
       {/* Step 3b: Registration card container */}
       <View style={styles.card}>
-        <Text style={styles.header}>Create your{`\n`}Account</Text>
+        <Text style={styles.header}>Create your account</Text>
 
         {/* Step 3c: Text fields for user input */}
         <TextInput

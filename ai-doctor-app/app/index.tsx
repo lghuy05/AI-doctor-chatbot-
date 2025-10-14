@@ -31,6 +31,13 @@ export default function WelcomeScreen() {
         <Link href="/chat-intro" asChild>
           <PrimaryButton title="Existing Patient" variant="secondary" />
         </Link>
+
+        <View style={{ height: 14 }} />
+
+        <Link href="/testing" asChild>
+          <PrimaryButton title="New Page"></PrimaryButton>
+        </Link>
+
       </View>
     </View>
   );
@@ -51,7 +58,7 @@ const styles = StyleSheet.create({
     width: '92%',
     backgroundColor: '#fff',
     borderRadius: 18,
-    paddingVertical: 36,
+    paddingVertical: 50,
     paddingHorizontal: 20,
     alignItems: 'center',
     shadowColor: '#000',

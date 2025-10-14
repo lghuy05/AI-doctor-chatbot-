@@ -1,0 +1,10 @@
+# Ignore ALL .env files in any directory
+.env
+*.env
+**/.env
+**/.env.*
+
+# Virtual environments
+venv/
+env/
+.venv/
