@@ -21,14 +21,14 @@ export default function WelcomeScreen() {
         <View style={{ height: 18 }} />
 
         {/* Step 5: Button → Navigate to /register */}
-        <Link href="/register" asChild>
+        <Link href="/auth/register" asChild>
           <PrimaryButton title="New Patient" />
         </Link>
 
         <View style={{ height: 14 }} />
 
         {/* Step 6: Button → Navigate to /chat-intro (existing user) */}
-        <Link href="/chat-intro" asChild>
+        <Link href="/patient/chat-intro" asChild>
           <PrimaryButton title="Existing Patient" variant="secondary" />
         </Link>
 
