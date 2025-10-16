@@ -72,7 +72,7 @@ export default function RegisterScreen() {
 
         {/* Step 3d: Register button */}
         <TouchableOpacity
-          onPress={() => canSubmit && router.push('/chat-intro')}
+          onPress={() => canSubmit && router.push('../patient/chat-intro')}
           disabled={!canSubmit}
           style={[styles.submit, !canSubmit && { opacity: 0.5 }]}
         >
@@ -82,7 +82,7 @@ export default function RegisterScreen() {
         {/* Step 3e: Already have account? */}
         <Text style={styles.footerText}>
           Already have an account?{' '}
-          <Text style={styles.link} onPress={() => router.push('/chat-intro')}>
+          <Text style={styles.link} onPress={() => router.push('../patient/chat-intro')}>
             Sign In
           </Text>
         </Text>

@@ -14,12 +14,12 @@ import { router } from 'expo-router';
 //  - Android Emulator: 10.0.2.2
 //  - Physical device: replace with your computer’s LAN IP (e.g., http://192.168.1.23:8000)
 // ------------------------------------------------------
-// const BASE_URL =
-//   Platform.OS === 'android'
-//     ? 'http://10.0.2.2:8000' // Android emulator -> host machine
-//     : 'http://localhost:8000'; // iOS Simulator (or web). For real device: use LAN IP.
-const BASE_URL = 'https://ai-doctor-app.onrender.com';
-// ------------------------------------------------------
+const BASE_URL =
+  Platform.OS === 'android'
+    ? 'http://10.0.2.2:8000' : 'http://localhost:8000'; // Android emulator -> host machine
+//
+// const BASE_URL = 'https://ai-doctor-app.onrender.com';
+//
 // Step 3: Create a tiny POST helper with timeout + good errors
 //  - Uses AbortController to avoid requests hanging forever
 //  - Surfaces server text when status is not OK
