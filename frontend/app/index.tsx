@@ -34,9 +34,6 @@ export default function WelcomeScreen() {
 
         <View style={{ height: 14 }} />
 
-        <Link href="/testing" asChild>
-          <PrimaryButton title="New Page"></PrimaryButton>
-        </Link>
 
       </View>
     </View>
