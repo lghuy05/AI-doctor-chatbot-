@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from models.schemas import SymptomInput, ReferralOut
-from services.llm_service import require_json_with_retry
+from app.schemas.schemas import SymptomInput, ReferralOut
+from app.services.llm_service import require_json_with_retry
 
 router = APIRouter()
 
