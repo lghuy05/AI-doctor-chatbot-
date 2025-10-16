@@ -26,7 +26,6 @@ if not OPENROUTER_API_KEY or not OPENROUTER_API_KEY.startswith("sk-or-"):
 # Step 3: Read the required API variables from environment
 # ------------------------------------------------------
 # These should all be set in your .env file (or docker-compose env_file)
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE = os.getenv("OPENROUTER_BASE", "https://openrouter.ai/api/v1")
 APP_REFERER = os.getenv("APP_REFERER", "http://localhost:8000")
 APP_TITLE = os.getenv("APP_TITLE", "AI Doctor App")
@@ -35,12 +34,6 @@ APP_TITLE = os.getenv("APP_TITLE", "AI Doctor App")
 # Step 4: Safety check — verify API key exists and is valid
 # ------------------------------------------------------
 # This helps catch missing or invalid keys early on startup.
-if not OPENROUTER_API_KEY or not OPENROUTER_API_KEY.startswith("sk-or-"):
-    raise RuntimeError(
-        "❌ Missing or invalid OPENROUTER_API_KEY.\n"
-        "Make sure your .env file is in the correct location and contains a valid key.\n"
-        "Example:\nOPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    )
 
 # ------------------------------------------------------
 # Step 5: Define the chat_completion function
