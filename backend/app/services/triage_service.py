@@ -1,5 +1,5 @@
 import re
-from models.schemas import TriageOut
+from app.schemas.schemas import TriageOut
 
 RED_FLAGS = [
     r"\b(chest pain|pressure in chest)\b",

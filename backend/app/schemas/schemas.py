@@ -10,6 +10,7 @@ from typing import List, Literal, Optional
 
 
 class UserCreate(BaseModel):
+    username: str
     email: EmailStr
     password: str
     age: int
@@ -17,12 +18,13 @@ class UserCreate(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    username_or_email: EmailStr
     password: str
 
 
 class UserResponse(BaseModel):
     id: int
+    username: str
     email: EmailStr
     age: int
     sex: str

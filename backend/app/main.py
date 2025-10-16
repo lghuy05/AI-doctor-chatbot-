@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 # Import route modules
-from routes import triage, advice, referrals, rx_draft
+from app.routes import triage, advice, referrals, rx_draft, auth
 
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 
@@ -33,6 +33,7 @@ async def log_requests(request, call_next):
 
 
 # ---------- Include Routers ----------
+app.include_router(auth.router)
 app.include_router(triage.router)
 app.include_router(advice.router)
 app.include_router(referrals.router)

@@ -2,7 +2,7 @@ import json
 import re
 from json_repair import repair_json
 from fastapi import HTTPException
-from openrouter_client import chat_completion
+from app.openrouter_client import chat_completion
 
 PATIENT_RX_BLOCK = re.compile(
     r"\b(take|start|increase|decrease)\b.*\b(mg|tablet|capsule|ml)\b", re.I

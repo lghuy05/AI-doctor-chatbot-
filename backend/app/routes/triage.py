@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from models.schemas import SymptomInput, TriageOut
-from services.triage_service import triage_rules
+from app.schemas.schemas import SymptomInput, TriageOut
+from app.services.triage_service import triage_rules
 
 router = APIRouter()
 

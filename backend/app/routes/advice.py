@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from models.schemas import SymptomInput, AdviceOut
-from services.triage_service import triage_rules
-from services.llm_service import require_json_with_retry, PATIENT_RX_BLOCK
+from app.schemas.schemas import SymptomInput, AdviceOut
+from app.services.triage_service import triage_rules
+from app.services.llm_service import require_json_with_retry, PATIENT_RX_BLOCK
 
 router = APIRouter()
 
