@@ -4,6 +4,8 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Literal, Optional
 
+from app.database.database import Base
+
 # ------------------------------------------------------
 # Step 2: Define the request model the app expects from the client
 # ------------------------------------------------------
@@ -20,6 +22,15 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username_or_email: EmailStr
     password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
 
 
 class UserResponse(BaseModel):
