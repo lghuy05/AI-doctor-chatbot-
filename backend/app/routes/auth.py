@@ -53,7 +53,7 @@ def test_db_connection(db: db_dependency):
         user_count = db.query(User).count()
         return {
             "status": "success",
-            "message": "Database connecttion is working",
+            "message": "Database connection is working",
             "user_count": user_count,
         }
     except Exception as e:
