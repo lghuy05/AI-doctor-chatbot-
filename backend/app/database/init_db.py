@@ -4,6 +4,8 @@ from .models import User
 
 def init_db():
     try:
+        # Base.metadata.drop_all(bind=engine)
+        # print("drop table")
         Base.metadata.create_all(bind=engine)
         print("📊 Tables created:")
         for table in Base.metadata.tables.keys():
