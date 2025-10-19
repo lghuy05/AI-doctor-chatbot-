@@ -48,9 +48,9 @@ class SymptomInput(BaseModel):
     age: int = Field(..., ge=0, description="Patient age in years")
     sex: Optional[str] = Field(None, description="Optional: male/female/other")
     symptoms: str = Field(..., description="Free text symptom description")
-    duration: Optional[str] = Field(None, description="e.g., '2 days'")
     meds: List[str] = Field(default_factory=list, description="Current medications")
     conditions: List[str] = Field(default_factory=list, description="Known conditions")
+    duration: Optional[str] = Field(None, description="e.g., '2 days'")
 
 
 # ------------------------------------------------------

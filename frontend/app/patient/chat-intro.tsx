@@ -12,7 +12,7 @@ import { chatStyles } from '../styles/chatStyles';
 // ------------------------------------------------------
 // Step 2: Configure Axios with base URL
 // ------------------------------------------------------
-const API_BASE_URL = 'http://10.0.2.2:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -56,7 +56,8 @@ export default function ChatIntroScreen() {
     setOutput(null);
 
     try {
-      const payload = { age: 30, sex: 'female', symptoms: text, meds: [], conditions: [] };
+      const payload = { age: 30, sex: 'female', symptoms: text, meds: [], conditions: [], duration: "unknown" };
+      console.log('Payload', payload);
 
       // 5a) TRIAGE FIRST using Axios
       const triageResponse = await api.post('/triage', payload);
