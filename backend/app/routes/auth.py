@@ -14,6 +14,7 @@ from app.services.auth_service import (
     ALGORITHM,
 )
 from jose import JWTError, jwt
+from typing import Annotated
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -62,43 +63,57 @@ def test_db_connection(db: db_dependency):
         )
 
 
-@router.post("/signup", response_model=Token)
-def signup(user_data: UserCreate, db: db_dependency):
-    existing_user = db.query(User).filter(User.username == user_data.username).first()
+@router.post("/register", response_model=Token)
+def register(user_data: UserCreate, db: db_dependency):
+    print(f"📝 Registration attempt for: {user_data.username}, {user_data.email}")
 
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
+    try:
+        existing_user = (
+            db.query(User).filter(User.username == user_data.username).first()
         )
-    existing_email = db.query(User).filter(User.email == user_data.email).first()
-    if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already existed"
+        if existing_user:
+            print("❌ Username already exists")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
+            )
+
+        existing_email = db.query(User).filter(User.email == user_data.email).first()
+        if existing_email:
+            print("❌ Email already exists")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already existed"
+            )
+
+        print("✅ Creating new user...")
+        hashed_password = get_password_hash(user_data.password)
+        db_user = User(
+            username=user_data.username,
+            email=user_data.email,
+            hashed_password=hashed_password,
+            age=user_data.age,
+            sex=user_data.sex,
         )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        print(f"✅ User created: {db_user.username}")
 
-    hashed_password = get_password_hash(user_data.password)
-    db_user = User(
-        username=user_data.username,
-        email=user_data.email,
-        hashed_password=hashed_password,
-        age=user_data.age,
-        sex=user_data.sex,
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user_data.username}, expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user_data.username}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+    except Exception as e:
+        print(f"❌ Registration error: {str(e)}")
+        raise
 
 
 @router.post("/login", response_model=Token)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
+    print(f"🔐 Login attempt - identifier: '{form_data.username}'")
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(

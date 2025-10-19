@@ -1,160 +1,210 @@
-// ------------------------------------------------------
-// Step 1: Import React + React Native building blocks
-// ------------------------------------------------------
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { router } from 'expo-router';
+import axios from 'axios';
+import { authStyles } from '../styles/authStyles';
 
-// ------------------------------------------------------
-// Step 2: Define the Register Screen component
-//  - Handles user registration input (name, DOB, email, password)
-//  - Simple front-end validation (no backend call yet)
-//  - Navigates to /chat-intro once valid data is entered
-// ------------------------------------------------------
+const API_BASE_URL = 'http://localhost:8000';
+
+console.log('🔗 Using API URL:', API_BASE_URL);
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 export default function RegisterScreen() {
-  // Step 2a: Track input values for each form field
-  const [name, setName] = useState<string>('');
-  const [dob, setDob] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string | number>('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [age, setAge] = useState<string>('');
+  const [sex, setSex] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // Step 2b: Simple validation — all fields must be filled,
-  // email must look valid, and password >= 6 chars
-  const canSubmit = name && dob && /.+@.+\..+/.test(email) && password.length >= 6;
+  // Validation
+  const passwordsMatch = password === confirmPassword;
+  const isAgeValid = age !== '' && !isNaN(Number(age)) && Number(age) > 0 && Number(age) < 120;
+  const canSubmit = username && email && /.+@.+\..+/.test(email) && password.length >= 6 && passwordsMatch && isAgeValid && sex;
 
-  // ------------------------------------------------------
-  // Step 3: Render UI
-  // ------------------------------------------------------
+  const handleRegister = async () => {
+    if (!canSubmit || loading) return;
+
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/register', {
+        username: username,
+        email: email,
+        password: password,
+        age: parseInt(age),
+        sex: sex,
+      });
+
+      Alert.alert('Success', 'Account created successfully! Please login.');
+      router.push('/auth/login');
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+
+      if (error.response?.data?.detail) {
+        Alert.alert('Registration Failed', error.response.data.detail);
+      } else if (error.code === 'ECONNABORTED') {
+        Alert.alert('Timeout', 'Request took too long. Please try again.');
+      } else {
+        Alert.alert('Error', 'Failed to create account. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Step 3a: Back button */}
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
-        <Text style={{ fontSize: 16 }}>‹</Text>
+    <View style={authStyles.container}>
+      <TouchableOpacity style={authStyles.back} onPress={() => router.back()}>
+        <Text style={authStyles.backText}>‹</Text>
       </TouchableOpacity>
 
-      {/* Step 3b: Registration card container */}
-      <View style={styles.card}>
-        <Text style={styles.header}>Create your account</Text>
+      <ScrollView style={authStyles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={authStyles.card}>
+          <Text style={authStyles.header}>Create your account</Text>
 
-        {/* Step 3c: Text fields for user input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          value={name}
-          onChangeText={setName}
-          placeholderTextColor="#9AA5B1"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Date of Birth (YYYY-MM-DD)"
-          value={dob}
-          onChangeText={setDob}
-          keyboardType="numeric"
-          placeholderTextColor="#9AA5B1"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor="#9AA5B1"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholderTextColor="#9AA5B1"
-        />
+          {/* Personal Information Section */}
+          <Text style={authStyles.sectionLabel}>Personal Information</Text>
 
-        {/* Step 3d: Register button */}
-        <TouchableOpacity
-          onPress={() => canSubmit && router.push('../patient/chat-intro')}
-          disabled={!canSubmit}
-          style={[styles.submit, !canSubmit && { opacity: 0.5 }]}
-        >
-          <Text style={styles.submitText}>Register</Text>
-        </TouchableOpacity>
+          <TextInput
+            style={authStyles.input}
+            placeholder="Username"
+            value={username}
+            onChangeText={setUsername}
+            placeholderTextColor="#9AA5B1"
+            autoCapitalize="none"
+          />
 
-        {/* Step 3e: Already have account? */}
-        <Text style={styles.footerText}>
-          Already have an account?{' '}
-          <Text style={styles.link} onPress={() => router.push('../patient/chat-intro')}>
-            Sign In
+          <TextInput
+            style={authStyles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholderTextColor="#9AA5B1"
+          />
+
+          <TextInput
+            style={[
+              authStyles.input,
+              !isAgeValid && age !== '' && authStyles.inputError
+            ]}
+            placeholder="Age"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+            placeholderTextColor="#9AA5B1"
+          />
+
+          {/* Gender Selection */}
+          <View style={authStyles.genderContainer}>
+            <Text style={authStyles.genderLabel}>Gender</Text>
+            <View style={authStyles.genderOptions}>
+              <TouchableOpacity
+                style={[
+                  authStyles.genderOption,
+                  sex === 'male' && authStyles.genderOptionSelected
+                ]}
+                onPress={() => setSex('male')}
+              >
+                <Text style={[
+                  authStyles.genderOptionText,
+                  sex === 'male' && authStyles.genderOptionTextSelected
+                ]}>Male</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  authStyles.genderOption,
+                  sex === 'female' && authStyles.genderOptionSelected
+                ]}
+                onPress={() => setSex('female')}
+              >
+                <Text style={[
+                  authStyles.genderOptionText,
+                  sex === 'female' && authStyles.genderOptionTextSelected
+                ]}>Female</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  authStyles.genderOption,
+                  sex === 'other' && authStyles.genderOptionSelected
+                ]}
+                onPress={() => setSex('other')}
+              >
+                <Text style={[
+                  authStyles.genderOptionText,
+                  sex === 'other' && authStyles.genderOptionTextSelected
+                ]}>Other</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {!isAgeValid && age !== '' && (
+            <Text style={authStyles.errorText}>Please enter a valid age (1-119)</Text>
+          )}
+
+          {/* Security Section */}
+          <Text style={authStyles.sectionLabel}>Security</Text>
+
+          <TextInput
+            style={[
+              authStyles.input,
+              !passwordsMatch && confirmPassword !== '' && authStyles.inputError
+            ]}
+            placeholder="Password (min. 6 characters)"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor="#9AA5B1"
+          />
+
+          <TextInput
+            style={[
+              authStyles.input,
+              !passwordsMatch && confirmPassword !== '' && authStyles.inputError
+            ]}
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            placeholderTextColor="#9AA5B1"
+          />
+
+          {!passwordsMatch && confirmPassword !== '' && (
+            <Text style={authStyles.errorText}>Passwords do not match</Text>
+          )}
+
+          {/* Register Button */}
+          <TouchableOpacity
+            onPress={handleRegister}
+            disabled={!canSubmit || loading}
+            style={[authStyles.submit, (!canSubmit || loading) && authStyles.submitDisabled]}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={authStyles.submitText}>Create Account</Text>
+            )}
+          </TouchableOpacity>
+
+          <Text style={authStyles.footerText}>
+            Already have an account?{' '}
+            <Text style={authStyles.link} onPress={() => router.push('/auth/login')}>
+              Sign In
+            </Text>
           </Text>
-        </Text>
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
-
-// ------------------------------------------------------
-// Step 4: Define styles for layout and components
-// ------------------------------------------------------
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 56,
-    paddingHorizontal: 18,
-    backgroundColor: '#F4F7FA', // optional: light background for visual comfort
-  },
-  back: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    backgroundColor: '#FFFFFFAA',
-    marginBottom: 8,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F131A',
-    marginBottom: 12,
-  },
-  input: {
-    height: 46,
-    borderRadius: 10,
-    backgroundColor: '#F4F7FA',
-    paddingHorizontal: 12,
-    marginVertical: 6,
-    fontSize: 16,
-    color: '#0F131A',
-  },
-  submit: {
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#0F131A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  submitText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  footerText: {
-    textAlign: 'center',
-    marginTop: 10,
-    color: '#6B7280',
-  },
-  link: {
-    color: '#0F131A',
-    fontWeight: '700',
-  },
-});
