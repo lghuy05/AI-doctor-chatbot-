@@ -14,7 +14,6 @@ if not SECRET_KEY:
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
-# Use Argon2 instead of bcrypt - more secure and no length limits
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 

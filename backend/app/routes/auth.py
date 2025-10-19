@@ -1,4 +1,3 @@
-from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -53,7 +52,7 @@ def test_db_connection(db: db_dependency):
         user_count = db.query(User).count()
         return {
             "status": "success",
-            "message": "Database connecttion is working",
+            "message": "Database connection is working",
             "user_count": user_count,
         }
     except Exception as e:
