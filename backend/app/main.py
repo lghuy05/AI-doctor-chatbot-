@@ -7,6 +7,7 @@ from app.routes import triage, advice, referrals, rx_draft, auth
 
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 
+
 # ---------- CORS (dev-friendly; tighten in prod) ----------
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(

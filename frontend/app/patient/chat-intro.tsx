@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import axios from 'axios';
-
+import { chatStyles } from '../styles/chatStyles';
 // ------------------------------------------------------
 // Step 2: Configure Axios with base URL
 // ------------------------------------------------------
@@ -91,77 +91,77 @@ export default function ChatIntroScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={chatStyles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.select({ ios: 'padding', android: undefined })}
-        style={styles.container}
+        style={chatStyles.container}
       >
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.back} onPress={() => router.back()}>
-            <Text style={styles.backText}>‹</Text>
+        <View style={chatStyles.headerRow}>
+          <TouchableOpacity style={chatStyles.back} onPress={() => router.back()}>
+            <Text style={chatStyles.backText}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>AI Doctor App</Text>
-          <View style={styles.headerSpacer} />
+          <Text style={chatStyles.title}>AI Doctor App</Text>
+          <View style={chatStyles.headerSpacer} />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardText}>In instances of a medical emergency, please dial 911.</Text>
+        <View style={chatStyles.card}>
+          <Text style={chatStyles.cardText}>In instances of a medical emergency, please dial 911.</Text>
         </View>
-        <View style={[styles.card, styles.secondaryCard]}>
-          <Text style={styles.cardText}>Suggestions are subject to error; verify with your primary care doctor.</Text>
+        <View style={[chatStyles.card, chatStyles.secondaryCard]}>
+          <Text style={chatStyles.cardText}>Suggestions are subject to error; verify with your primary care doctor.</Text>
         </View>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <ScrollView style={chatStyles.scrollView} contentContainerStyle={chatStyles.scrollContent}>
           {loading && (
-            <View style={[styles.card, styles.loadingCard]}>
+            <View style={[chatStyles.card, chatStyles.loadingCard]}>
               <ActivityIndicator />
-              <Text style={styles.loadingText}>Thinking…</Text>
+              <Text style={chatStyles.loadingText}>Thinking…</Text>
             </View>
           )}
 
           {!!output?.error && (
-            <View style={[styles.card, styles.errorCard]}>
-              <Text style={styles.errorTitle}>Error</Text>
-              <Text style={styles.errorText}>{output.error}</Text>
+            <View style={[chatStyles.card, chatStyles.errorCard]}>
+              <Text style={chatStyles.errorTitle}>Error</Text>
+              <Text style={chatStyles.errorText}>{output.error}</Text>
             </View>
           )}
 
           {!!output?.emergency && (
-            <View style={[styles.card, styles.emergencyCard]}>
-              <Text style={styles.emergencyTitle}>Emergency</Text>
-              <Text style={styles.emergencyText}>{output.notice}</Text>
+            <View style={[chatStyles.card, chatStyles.emergencyCard]}>
+              <Text style={chatStyles.emergencyTitle}>Emergency</Text>
+              <Text style={chatStyles.emergencyText}>{output.notice}</Text>
             </View>
           )}
 
           {!!output?.advice && (
-            <View style={styles.card}>
-              <Text style={styles.adviceTitle}>At-home steps</Text>
+            <View style={chatStyles.card}>
+              <Text style={chatStyles.adviceTitle}>At-home steps</Text>
               {output.advice.advice?.map((a, idx) => (
-                <View key={idx} style={styles.adviceItem}>
-                  <Text style={styles.adviceStep}>{a.step}</Text>
-                  <Text style={styles.adviceDetails}>{a.details}</Text>
+                <View key={idx} style={chatStyles.adviceItem}>
+                  <Text style={chatStyles.adviceStep}>{a.step}</Text>
+                  <Text style={chatStyles.adviceDetails}>{a.details}</Text>
                 </View>
               ))}
 
               {!!output.advice.when_to_seek_care?.length && (
                 <>
-                  <Text style={styles.careTitle}>When to seek care</Text>
+                  <Text style={chatStyles.careTitle}>When to seek care</Text>
                   {output.advice.when_to_seek_care.map((w, idx) => (
-                    <Text key={idx} style={styles.careItem}>• {w}</Text>
+                    <Text key={idx} style={chatStyles.careItem}>• {w}</Text>
                   ))}
                 </>
               )}
 
               {!!output.advice.disclaimer && (
-                <Text style={styles.disclaimer}>{output.advice.disclaimer}</Text>
+                <Text style={chatStyles.disclaimer}>{output.advice.disclaimer}</Text>
               )}
             </View>
           )}
         </ScrollView>
 
-        <View style={styles.inputBar}>
+        <View style={chatStyles.inputBar}>
           <TextInput
-            style={styles.input}
+            style={chatStyles.input}
             placeholder="Send a message..."
             value={message}
             onChangeText={setMessage}
@@ -171,11 +171,11 @@ export default function ChatIntroScreen() {
             onSubmitEditing={send}
           />
           <TouchableOpacity
-            style={[styles.sendBtn, loading && styles.sendBtnDisabled]}
+            style={[chatStyles.sendBtn, loading && chatStyles.sendBtnDisabled]}
             onPress={send}
             disabled={loading}
           >
-            <Text style={styles.sendBtnText}>{loading ? '...' : 'Send'}</Text>
+            <Text style={chatStyles.sendBtnText}>{loading ? '...' : 'Send'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

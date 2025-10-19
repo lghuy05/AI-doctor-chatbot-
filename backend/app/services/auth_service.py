@@ -39,9 +39,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 def authenticate_user(db, username: str, password: str):
     from app.database.models import User
 
-    user = db.query(User).filter(User.username == username).first()
+    user = (
+        db.query(User)
+        .filter((User.username == username) | (User.email == username))
+        .first()
+    )
     if not user:
+        print(f"❌ User not found with username/email: {username}")
         return False
     if not verify_password(password, user.hashed_password):
+        print(f"❌ Password incorrect for user: {user.username}")
         return False
+    print(f"✅ Authentication successful for user: {user.username}")
     return user

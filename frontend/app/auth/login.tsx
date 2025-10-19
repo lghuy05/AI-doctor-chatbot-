@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import axios from 'axios';
 import { authStyles } from '../styles/authStyles';
 
-const API_BASE_URL = 'http://10.0.2.2:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,11 +12,11 @@ const api = axios.create({
 });
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState<string>('');
+  const [identifier, setIdentifier] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
-  const canSubmit = email && password.length >= 6;
+  const canSubmit = identifier && password.length >= 6;
 
   const handleLogin = async () => {
     if (!canSubmit || loading) return;
@@ -25,7 +25,7 @@ export default function LoginScreen() {
 
     try {
       const formData = new FormData();
-      formData.append('username', email);
+      formData.append('username', identifier);
       formData.append('password', password);
 
       const response = await api.post('/auth/login', formData, {
@@ -70,9 +70,9 @@ export default function LoginScreen() {
 
         <TextInput
           style={authStyles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
+          placeholder="Username or email"
+          value={identifier}
+          onChangeText={setIdentifier}
           keyboardType="email-address"
           autoCapitalize="none"
           placeholderTextColor="#9AA5B1"
