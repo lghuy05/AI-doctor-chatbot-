@@ -8,3 +8,6 @@
 venv/
 env/
 .venv/
+
+Dockerfile
+docker-compose.yml
