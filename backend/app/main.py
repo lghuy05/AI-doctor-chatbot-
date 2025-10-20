@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from app.database.database import engine, Base
 
 # Import route modules
 from app.routes import triage, advice, referrals, rx_draft, auth
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 

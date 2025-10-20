@@ -8,6 +8,7 @@ router = APIRouter()
 
 @router.post("/advice", response_model=AdviceOut)
 def route_advice(inp: SymptomInput):
+    # First check for emergencies using triage
     triage = triage_rules(inp.symptoms)
     if triage.risk == "emergency":
         raise HTTPException(400, "Possible emergency. Call emergency services now.")
@@ -21,7 +22,8 @@ def route_advice(inp: SymptomInput):
         user = (
             f"Age: {inp.age}\nSex: {inp.sex}\nSymptoms: {inp.symptoms}\nDuration: {
                 inp.duration
-            }\nMeds: {inp.meds}\nConditions: {inp.conditions}\nSchema example:\n"
+            }\n"
+            f"Meds: {inp.meds}\nConditions: {inp.conditions}\nSchema example:\n"
             + '{"advice":[{"step":"Hydration","details":"Small sips of water."}],"when_to_seek_care":["Trouble breathing"],"disclaimer":"This is not a diagnosis."}'
         )
         return [
