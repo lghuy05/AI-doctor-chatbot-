@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from sqlalchemy import text
+from fastapi.requests import HTTPConnection
 from app.database.database import engine, Base
 
 # Import route modules
@@ -44,6 +46,32 @@ app.include_router(referrals.router)
 app.include_router(rx_draft.router)
 
 
+@app.get("/")
+async def root():
+    return {"message": "AI Doctor Chatbot API is running!", "status": "healthy"}
+
+
 @app.get("/health")
-def health():
-    return {"ok": True}
+async def health():
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            db_test = result.scalar()
+
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "aws_rds": "connected",
+            "service": "AI Doctor CHatbot API",
+            "database_test": db_test,
+        }
+    except Exception as e:
+        raise HTTPConnection(
+            status_code=500,
+            detail={
+                "status": "unhealthy",
+                "database": "disconnected",
+                "aws_rds": "error",
+                "error": str(e),
+            },
+        )
