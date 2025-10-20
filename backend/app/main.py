@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from sqlalchemy import text
@@ -8,8 +8,13 @@ from app.database.database import engine, Base
 # Import route modules
 from app.routes import triage, advice, referrals, rx_draft, auth
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully!")
+except Exception as e:
+    print(f"❌ Error creating tables: {e}")
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 
 
@@ -66,7 +71,7 @@ async def health():
             "database_test": db_test,
         }
     except Exception as e:
-        raise HTTPConnection(
+        raise HTTPException(
             status_code=500,
             detail={
                 "status": "unhealthy",
