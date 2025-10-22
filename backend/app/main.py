@@ -5,10 +5,7 @@ from sqlalchemy import text
 from fastapi.requests import HTTPConnection
 from app.database.database import engine, Base
 
-# Import route modules
 from app.routes import triage, advice, referrals, rx_draft, auth
-
-# Base.metadata.create_all(bind=engine)
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -18,7 +15,6 @@ except Exception as e:
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 
 
-# ---------- CORS (dev-friendly; tighten in prod) ----------
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -27,8 +23,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ---------- Simple request logger ----------
 
 
 @app.middleware("http")
@@ -43,7 +37,6 @@ async def log_requests(request, call_next):
         raise
 
 
-# ---------- Include Routers ----------
 app.include_router(auth.router)
 app.include_router(triage.router)
 app.include_router(advice.router)
