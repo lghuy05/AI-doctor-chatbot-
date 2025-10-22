@@ -4,8 +4,8 @@ import { router } from 'expo-router';
 import axios from 'axios';
 import { authStyles } from '../styles/authStyles';
 
-const API_BASE_URL = 'http://localhost:8000';
-
+// const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
 console.log('🔗 Using API URL:', API_BASE_URL);
 
 const api = axios.create({
@@ -25,7 +25,6 @@ export default function RegisterScreen() {
   const [sex, setSex] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Validation
   const passwordsMatch = password === confirmPassword;
   const isAgeValid = age !== '' && !isNaN(Number(age)) && Number(age) > 0 && Number(age) < 120;
   const canSubmit = username && email && /.+@.+\..+/.test(email) && password.length >= 6 && passwordsMatch && isAgeValid && sex;
@@ -71,8 +70,6 @@ export default function RegisterScreen() {
       <ScrollView style={authStyles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={authStyles.card}>
           <Text style={authStyles.header}>Create your account</Text>
-
-          {/* Personal Information Section */}
           <Text style={authStyles.sectionLabel}>Personal Information</Text>
 
           <TextInput
@@ -106,7 +103,6 @@ export default function RegisterScreen() {
             placeholderTextColor="#9AA5B1"
           />
 
-          {/* Gender Selection */}
           <View style={authStyles.genderContainer}>
             <Text style={authStyles.genderLabel}>Gender</Text>
             <View style={authStyles.genderOptions}>
@@ -150,10 +146,9 @@ export default function RegisterScreen() {
           </View>
 
           {!isAgeValid && age !== '' && (
-            <Text style={authStyles.errorText}>Please enter a valid age (1-119)</Text>
+            <Text style={authStyles.errorText}>Please enter a valid age</Text>
           )}
 
-          {/* Security Section */}
           <Text style={authStyles.sectionLabel}>Security</Text>
 
           <TextInput
@@ -184,7 +179,6 @@ export default function RegisterScreen() {
             <Text style={authStyles.errorText}>Passwords do not match</Text>
           )}
 
-          {/* Register Button */}
           <TouchableOpacity
             onPress={handleRegister}
             disabled={!canSubmit || loading}

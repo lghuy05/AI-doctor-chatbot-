@@ -12,7 +12,9 @@ import { chatStyles } from '../styles/chatStyles';
 // ------------------------------------------------------
 // Step 2: Configure Axios with base URL
 // ------------------------------------------------------
-const API_BASE_URL = 'http://localhost:8000';
+// const API_BASE_URL = 'http://localhost:8000';
+
+const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

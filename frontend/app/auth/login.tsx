@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import axios from 'axios';
 import { authStyles } from '../styles/authStyles';
 
-const API_BASE_URL = 'http://localhost:8000';
+// const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -37,9 +38,9 @@ export default function LoginScreen() {
       const { access_token, token_type } = response.data;
 
       // TODO: Store token securely (AsyncStorage, secure store, etc.)
+      await Asy
       console.log('Login successful, token:', access_token);
 
-      // Navigate to main app screen
       router.replace('/patient/chat-intro');
 
     } catch (error: any) {
