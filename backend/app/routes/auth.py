@@ -105,8 +105,12 @@ def register(user_data: UserCreate, db: db_dependency):
         return {"access_token": access_token, "token_type": "bearer"}
 
     except Exception as e:
+        db.rollback()
         print(f"❌ Registration error: {str(e)}")
-        raise
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed",
+        )
 
 
 @router.post("/login", response_model=Token)
