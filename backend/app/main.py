@@ -25,6 +25,8 @@ app.add_middleware(
 
 @app.middleware("http")
 async def authenticate_request(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return await call_next(request)
     # Skip auth for these public endpoints
     public_paths = ["/auth/login", "/auth/register", "/", "/health"]
 
