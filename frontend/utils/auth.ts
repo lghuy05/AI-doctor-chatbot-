@@ -1,11 +1,13 @@
 // utils/auth.ts
 import { removeToken, getToken } from './storage';
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
 
 export const logout = async (): Promise<void> => {
   try {
     console.log('🟡 [1] Starting logout process...');
+
+    // Check current route
+    console.log('🟡 Current route state:', router);
 
     const existingToken = await getToken();
     console.log('🟡 [2] Token exists:', !!existingToken);
@@ -17,30 +19,17 @@ export const logout = async (): Promise<void> => {
       console.log('ℹ️ [3] No token found');
     }
 
-    console.log('🟡 [4] About to navigate to login...');
+    console.log('🟡 [4] Navigating to login...');
 
-    // Try different navigation methods
-    router.navigate('/auth/login');
-    console.log('🟡 [5] router.navigate() called');
+    // Use replace instead of navigate to prevent going back
+    router.replace('/auth/login');
 
-    // Force navigation as backup
-    setTimeout(() => {
-      console.log('🟡 [6] Backup navigation attempt');
-      router.replace('/auth/login');
-    }, 100);
+    console.log('✅ [5] Navigation command sent');
 
   } catch (error) {
     console.error('❌ [ERROR] Logout error:', error);
 
-    Alert.alert(
-      'Logout Error',
-      'There was an issue logging out. Please try again.',
-      [{
-        text: 'OK', onPress: () => {
-          console.log('🟡 [7] Manual navigation after error');
-          router.navigate('/auth/login');
-        }
-      }]
-    );
+    // Even if there's an error, try to navigate to login
+    router.replace('/auth/login');
   }
 };
