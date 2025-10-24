@@ -9,21 +9,21 @@ import {
 import { router } from 'expo-router';
 import axios from 'axios';
 import { chatStyles } from '../styles/chatStyles';
+import api from '../../api/client';
 // ------------------------------------------------------
 // Step 2: Configure Axios with base URL
 // ------------------------------------------------------
 // const API_BASE_URL = 'http://localhost:8000';
 
-const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 20000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
+// const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
+//
+// const api = axios.create({
+//   baseURL: API_BASE_URL,
+//   timeout: 20000,
+//   headers: {
+//     'Content-Type': 'application/json',
+//   },
+// });
 // TODO: Add token to requests (you'll need to get this from your auth storage)
 // api.interceptors.request.use((config) => {
 //   const token = await getTokenFromStorage(); // Implement this

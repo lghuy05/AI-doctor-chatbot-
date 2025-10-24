@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } fro
 import { router } from 'expo-router';
 import axios from 'axios';
 import { authStyles } from '../styles/authStyles';
+import { storeToken } from '../../utils/storage';
+
 
 // const API_BASE_URL = 'http://localhost:8000';
 const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
@@ -36,9 +38,9 @@ export default function LoginScreen() {
       });
 
       const { access_token, token_type } = response.data;
+      await storeToken(access_token);
 
       // TODO: Store token securely (AsyncStorage, secure store, etc.)
-      await Asy
       console.log('Login successful, token:', access_token);
 
       router.replace('/patient/chat-intro');
