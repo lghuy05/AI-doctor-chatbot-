@@ -1,35 +1,38 @@
-// ------------------------------------------------------
-// Step 1: Import React Native building blocks + navigation helpers
-// ------------------------------------------------------
-import { View, Text } from 'react-native';
-import { Link } from 'expo-router';
-import PrimaryButton from '../components/PrimaryButton';
-import { welcomeStyles } from './styles/welcomeStyles';
-// ------------------------------------------------------
-// Step 2: Define the Welcome Screen component
-// ------------------------------------------------------
-export default function WelcomeScreen() {
-  return (
-    <View style={welcomeStyles.container}>
-      <View style={welcomeStyles.card}>
-        <Text style={welcomeStyles.title}>Welcome to the AI{"\n"}Doctor App</Text>
+// app/index.tsx
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Text } from 'react-native';
+import { Redirect } from 'expo-router';
+import { getToken } from '../utils/storage';
 
-        <View style={{ height: 18 }} />
+export default function Index() {
+  const [isReady, setIsReady] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
 
-        {/* Updated to point to /auth/register */}
-        <Link href="/auth/register" asChild>
-          <PrimaryButton title="New Patient" />
-        </Link>
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await getToken();
+        console.log('🔐 Auth check:', token ? 'Token found' : 'No token');
+        setHasToken(!!token);
+      } catch (error) {
+        console.error('❌ Auth check failed:', error);
+        setHasToken(false);
+      } finally {
+        setIsReady(true);
+      }
+    };
 
-        <View style={{ height: 14 }} />
+    checkAuth();
+  }, []);
 
-        {/* Updated to point to /auth/login for existing patients */}
-        <Link href="/auth/login" asChild>
-          <PrimaryButton title="Existing Patient" variant="secondary" />
-        </Link>
-
-        <View style={{ height: 14 }} />
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+        <Text>Loading...</Text>
       </View>
-    </View>
-  );
+    );
+  }
+
+  return hasToken ? <Redirect href="./patient/chat-intro" /> : <Redirect href="./auth/login" />;
 }

@@ -1,10 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from sqlalchemy import text
-from fastapi.requests import HTTPConnection
 from app.database.database import engine, Base
-
 from app.routes import triage, advice, referrals, rx_draft, auth
 
 try:
@@ -12,8 +10,8 @@ try:
     print("✅ Database tables created successfully!")
 except Exception as e:
     print(f"❌ Error creating tables: {e}")
-app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 
+app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
@@ -26,7 +24,39 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def log_requests(request, call_next):
+async def authenticate_request(request: Request, call_next):
+    # Skip auth for these public endpoints
+    public_paths = ["/auth/login", "/auth/register", "/", "/health"]
+
+    if request.url.path in public_paths:
+        return await call_next(request)
+
+    # Check for Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
+
+    token = auth_header.replace("Bearer ", "")
+
+    # TODO: Implement your actual token verification logic
+    # For now, we'll just validate the token exists and let it pass
+    if not token:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # If you have user verification, add it here:
+    # user = await verify_token_function(token)
+    # if not user:
+    #     raise HTTPException(status_code=401, detail="Invalid token")
+    # request.state.user = user  # Add user to request state
+
+    print(f"🔐 Auth: Token received for {request.url.path}")
+
+    response = await call_next(request)
+    return response
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
     print(">>", request.method, request.url.path)
     try:
         resp = await call_next(request)
@@ -60,7 +90,7 @@ async def health():
             "status": "healthy",
             "database": "connected",
             "aws_rds": "connected",
-            "service": "AI Doctor CHatbot API",
+            "service": "AI Doctor Chatbot API",
             "database_test": db_test,
         }
     except Exception as e:

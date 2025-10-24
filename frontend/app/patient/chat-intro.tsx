@@ -3,35 +3,12 @@
 // ------------------------------------------------------
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, SafeAreaView, ActivityIndicator, ScrollView, Alert
 } from 'react-native';
 import { router } from 'expo-router';
-import axios from 'axios';
 import { chatStyles } from '../styles/chatStyles';
 import api from '../../api/client';
-// ------------------------------------------------------
-// Step 2: Configure Axios with base URL
-// ------------------------------------------------------
-// const API_BASE_URL = 'http://localhost:8000';
-
-// const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
-//
-// const api = axios.create({
-//   baseURL: API_BASE_URL,
-//   timeout: 20000,
-//   headers: {
-//     'Content-Type': 'application/json',
-//   },
-// });
-// TODO: Add token to requests (you'll need to get this from your auth storage)
-// api.interceptors.request.use((config) => {
-//   const token = await getTokenFromStorage(); // Implement this
-//   if (token) {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// });
 
 // ------------------------------------------------------
 // Step 3: Build the screen with Axios
@@ -79,7 +56,7 @@ export default function ChatIntroScreen() {
 
       if (error.response?.status === 401) {
         Alert.alert('Session Expired', 'Please login again');
-        router.push('/login');
+        router.push('/auth/login');
       } else if (error.response?.data?.detail) {
         setOutput({ error: error.response.data.detail });
       } else if (error.code === 'ECONNABORTED') {
@@ -99,12 +76,17 @@ export default function ChatIntroScreen() {
         behavior={Platform.select({ ios: 'padding', android: undefined })}
         style={chatStyles.container}
       >
+        {/* ✅ UPDATED HEADER WITH PROFILE BUTTON */}
         <View style={chatStyles.headerRow}>
           <TouchableOpacity style={chatStyles.back} onPress={() => router.back()}>
             <Text style={chatStyles.backText}>‹</Text>
           </TouchableOpacity>
           <Text style={chatStyles.title}>AI Doctor App</Text>
-          <View style={chatStyles.headerSpacer} />
+
+          {/* ✅ PROFILE NAVIGATION BUTTON */}
+          <TouchableOpacity onPress={() => router.push('/patient/profile')}>
+            <Text style={chatStyles.backText}>👤</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={chatStyles.card}>
