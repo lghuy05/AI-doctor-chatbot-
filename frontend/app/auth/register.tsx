@@ -23,11 +23,12 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [age, setAge] = useState<string>('');
   const [sex, setSex] = useState<string>('');
+  const [role, setRole] = useState<string>(''); // ← ADD THIS
   const [loading, setLoading] = useState<boolean>(false);
 
   const passwordsMatch = password === confirmPassword;
   const isAgeValid = age !== '' && !isNaN(Number(age)) && Number(age) > 0 && Number(age) < 120;
-  const canSubmit = username && email && /.+@.+\..+/.test(email) && password.length >= 6 && passwordsMatch && isAgeValid && sex;
+  const canSubmit = username && email && /.+@.+\..+/.test(email) && password.length >= 6 && passwordsMatch && isAgeValid && sex && role; // ← ADD role CHECK
 
   const handleRegister = async () => {
     if (!canSubmit || loading) return;
@@ -41,6 +42,7 @@ export default function RegisterScreen() {
         password: password,
         age: parseInt(age),
         sex: sex,
+        role: role, // ← ADD THIS
       });
 
       Alert.alert('Success', 'Account created successfully! Please login.');
@@ -141,6 +143,37 @@ export default function RegisterScreen() {
                   authStyles.genderOptionText,
                   sex === 'other' && authStyles.genderOptionTextSelected
                 ]}>Other</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ADD ROLE SELECTION SECTION */}
+          <View style={authStyles.genderContainer}>
+            <Text style={authStyles.genderLabel}>Role</Text>
+            <View style={authStyles.genderOptions}>
+              <TouchableOpacity
+                style={[
+                  authStyles.genderOption,
+                  role === 'patient' && authStyles.genderOptionSelected
+                ]}
+                onPress={() => setRole('patient')}
+              >
+                <Text style={[
+                  authStyles.genderOptionText,
+                  role === 'patient' && authStyles.genderOptionTextSelected
+                ]}>Patient</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  authStyles.genderOption,
+                  role === 'clinician' && authStyles.genderOptionSelected
+                ]}
+                onPress={() => setRole('clinician')}
+              >
+                <Text style={[
+                  authStyles.genderOptionText,
+                  role === 'clinician' && authStyles.genderOptionTextSelected
+                ]}>Clinician</Text>
               </TouchableOpacity>
             </View>
           </View>

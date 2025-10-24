@@ -92,6 +92,7 @@ def register(user_data: UserCreate, db: db_dependency):
             hashed_password=hashed_password,
             age=user_data.age,
             sex=user_data.sex,
+            role=user_data.role,
         )
         db.add(db_user)
         db.commit()
@@ -100,7 +101,8 @@ def register(user_data: UserCreate, db: db_dependency):
 
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user_data.username}, expires_delta=access_token_expires
+            data={"sub": user_data.username, "role": user_data.role},
+            expires_delta=access_token_expires,
         )
         return {"access_token": access_token, "token_type": "bearer"}
 

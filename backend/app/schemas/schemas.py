@@ -17,6 +17,7 @@ class UserCreate(BaseModel):
     password: str
     age: int
     sex: str
+    role: str = Field(..., description="User role: patient or clinician")
 
 
 class UserLogin(BaseModel):
@@ -39,6 +40,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     age: int
     sex: str
+    role: str
 
     class Config:
         from_attributes = True
