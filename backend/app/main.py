@@ -48,6 +48,9 @@ async def authenticate_request(request: Request, call_next):
         "/redoc",
         "/openapi.json",
         "/favicon.ico",
+        "/patient/discover",
+        "/patient/profile/",
+        "/ehr-advice",
     ]
     if request.url.path in public_paths:
         return await call_next(request)
