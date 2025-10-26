@@ -1,3 +1,4 @@
+# main.py (updated)
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -12,6 +13,13 @@ except Exception as e:
     print(f"❌ Error creating tables: {e}")
 
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
+
+# EHR Configuration
+EHR_ENABLED = os.getenv("EHR_ENABLED", "false").lower() == "true"
+FHIR_BASE_URL = os.getenv("FHIR_BASE_URL", "https://hapi.fhir.org/baseR4")
+
+print(f"🔧 EHR Integration: {'ENABLED' if EHR_ENABLED else 'DISABLED'}")
+print(f"🔧 FHIR Server: {FHIR_BASE_URL}")
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
@@ -53,12 +61,6 @@ async def authenticate_request(request: Request, call_next):
     if not token:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # If you have user verification, add it here:
-    # user = await verify_token_function(token)
-    # if not user:
-    #     raise HTTPException(status_code=401, detail="Invalid token")
-    # request.state.user = user  # Add user to request state
-
     print(f"🔐 Auth: Token received for {request.url.path}")
 
     response = await call_next(request)
@@ -77,16 +79,31 @@ async def log_requests(request: Request, call_next):
         raise
 
 
+# Include base routers
 app.include_router(auth.router)
 app.include_router(triage.router)
 app.include_router(advice.router)
 app.include_router(referrals.router)
 app.include_router(rx_draft.router)
 
+# Conditionally include EHR routers
+if EHR_ENABLED:
+    from app.routes import ehr_advice, patient_profile
+
+    app.include_router(ehr_advice.router)
+    app.include_router(patient_profile.router)
+    print("✅ EHR routes registered: /ehr-advice, /patient/profile")
+
 
 @app.get("/")
 async def root():
-    return {"message": "AI Doctor Chatbot API is running!", "status": "healthy"}
+    ehr_status = "enabled" if EHR_ENABLED else "disabled"
+    return {
+        "message": "AI Doctor Chatbot API is running!",
+        "status": "healthy",
+        "ehr_integration": ehr_status,
+        "fhir_server": FHIR_BASE_URL if EHR_ENABLED else "none",
+    }
 
 
 @app.get("/health")
@@ -96,20 +113,26 @@ async def health():
             result = conn.execute(text("SELECT 1"))
             db_test = result.scalar()
 
-        return {
+        health_info = {
             "status": "healthy",
             "database": "connected",
-            "aws_rds": "connected",
             "service": "AI Doctor Chatbot API",
             "database_test": db_test,
+            "ehr_integration": "enabled" if EHR_ENABLED else "disabled",
         }
+
+        if EHR_ENABLED:
+            health_info["fhir_server"] = FHIR_BASE_URL
+
+        return health_info
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail={
                 "status": "unhealthy",
                 "database": "disconnected",
-                "aws_rds": "error",
+                "ehr_integration": "enabled" if EHR_ENABLED else "disabled",
                 "error": str(e),
             },
         )
