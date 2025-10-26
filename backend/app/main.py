@@ -18,7 +18,7 @@ except Exception as e:
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 
 # EHR Configuration
-EHR_ENABLED = os.getenv("EHR_ENABLED", "false").lower() == "true"
+EHR_ENABLED = True
 FHIR_BASE_URL = os.getenv("FHIR_BASE_URL", "https://hapi.fhir.org/baseR4")
 
 print(f"🔧 EHR Integration: {'ENABLED' if EHR_ENABLED else 'DISABLED'}")
@@ -91,12 +91,15 @@ app.include_router(rx_draft.router)
 
 # Conditionally include EHR routers
 if EHR_ENABLED:
-    from app.ehr.ehr_advice import router as ehr_advice_router
-    from app.routes.patient_profile import router as patient_profile_router
+    try:
+        from app.routes.patient_profile import router as patient_profile_router
+        from app.ehr.ehr_advice import router as ehr_advice_router
 
-    app.include_router(ehr_advice_router)
-    app.include_router(patient_profile_router)
-    print("✅ EHR routes registered: /ehr-advice, /patient/profile")
+        app.include_router(ehr_advice_router)
+        app.include_router(patient_profile_router)
+        print("✅ EHR routes registered: /ehr-advice, /patient/profile")
+    except ImportError as e:
+        print(f"Failed to import EHR: {e}")
 
 
 @app.get("/")
