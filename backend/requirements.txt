@@ -12,3 +12,4 @@ python-multipart
 email-validator==2.1.0
 argon2-cffi
 passlib[argon2]
+python-dateutil==2.8.2 
