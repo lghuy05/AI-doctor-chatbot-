@@ -129,7 +129,7 @@ export default function ChatIntroScreen() {
       }
 
       // Step 2: Get personalized advice
-      const adviceResponse = await api.post('/advice', payload);
+      const adviceResponse = await api.post('/ehr-advice', payload);
       setOutput({
         advice: adviceResponse.data,
         notice: hasPatientDataWarning ? 'Note: Using generic medical advice. For personalized recommendations, ensure your patient profile is complete.' : undefined
@@ -175,7 +175,7 @@ export default function ChatIntroScreen() {
 
   const retryPatientData = async () => {
     try {
-      await fetchPatientProfile('500569db-b06d-461a-8361-e6b5adbf081a', true);
+      await fetchPatientProfile('example', true);
     } catch (error) {
       console.error('Failed to retry patient data:', error);
     }
