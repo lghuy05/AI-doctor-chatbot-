@@ -88,7 +88,7 @@ app.include_router(rx_draft.router)
 
 # Conditionally include EHR routers
 if EHR_ENABLED:
-    from app.routes import ehr_advice, patient_profile
+    from app.ehr import ehr_advice, patient_profile
 
     app.include_router(ehr_advice.router)
     app.include_router(patient_profile.router)
