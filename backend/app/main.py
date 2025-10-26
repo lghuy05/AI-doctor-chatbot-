@@ -5,6 +5,9 @@ import os
 from sqlalchemy import text
 from app.database.database import engine, Base
 from app.routes import triage, advice, referrals, rx_draft, auth
+from dotenv import load_dotenv
+
+load_dotenv()
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -88,11 +91,11 @@ app.include_router(rx_draft.router)
 
 # Conditionally include EHR routers
 if EHR_ENABLED:
-    from app.ehr import ehr_advice
-    from app.routes import patient_profile
+    from app.ehr.ehr_advice import router as ehr_advice_router
+    from app.routes.patient_profile import router as patient_profile_router
 
-    app.include_router(ehr_advice.router)
-    app.include_router(patient_profile.router)
+    app.include_router(ehr_advice_router)
+    app.include_router(patient_profile_router)
     print("✅ EHR routes registered: /ehr-advice, /patient/profile")
 
 

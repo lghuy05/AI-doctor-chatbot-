@@ -1,6 +1,6 @@
 # routes/patient_profile.py
 from fastapi import APIRouter, HTTPException
-from app.schemas.ehr_schemas import ProfileResponse
+from app.schemas.profile_schemas import ProfileResponse, PatientProfile
 from app.services.fhir_service import FHIRService
 
 router = APIRouter()

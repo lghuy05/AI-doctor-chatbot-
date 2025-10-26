@@ -4,6 +4,7 @@ from app.schemas.schemas import SymptomInput, AdviceOut
 from app.services.fhir_service import FHIRService
 from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
+from app.schemas.profile_schemas import PatientProfile
 
 router = APIRouter()
 
