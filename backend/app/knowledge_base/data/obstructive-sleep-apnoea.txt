@@ -1,0 +1,138 @@
+Source URL: https://www.nhsinform.scot/illnesses-and-conditions/lungs-and-airways/obstructive-sleep-apnoea/
+
+---
+
+Obstructive sleep apnoea
+Obstructive sleep apnoea (OSA) is a relatively common condition where the walls of the throat relax and narrow or close during sleep. This interrupts normal breathing. It may lead to regularly broken sleep which can:
+impact your quality of life – mainly by making you very sleepy during the day
+increase the risk of developing certain conditions
+Types of OSA
+OSA can be 2 types of breathing interruption:
+apnoea – a total blockage of the airway for 10 seconds or more
+hypopnoea – a partial blockage of the airway that causes airflow to reduce by more than 50% for 10 seconds or more
+People with OSA may have apnoea and hypopnoea throughout the night. Episodes may occur around once every 1 or 2 minutes in severe cases.
+OSA is sometimes called obstructive sleep apnoea-hypopnoea syndrome (OSAHS). This is where people have apnoeas and hypopnoeas throughout the night, as well as impacted quality of life due to sleepiness during the day and other symptoms. OSA and OSAHS are the same thing.
+Symptoms of OSA
+Signs of OSA can include:
+being very sleepy during the day
+breathing pauses through the night – this may be noticed by a partner, friend or relative
+loud snoring
+noisy and/or laboured breathing
+repeated periods where breathing stops or is interrupted by gasping or snorting
+Some people with OSA may also experience night sweats and may wake up often during the night to pee.
+During an episode, the lack of oxygen triggers your brain to pull you out of deep sleep either to a lighter sleep or to wakefulness. Your airway then reopens and you can breathe normally. These repeated sleep interruptions can make you feel very tired and more likely to fall asleep during the day. You’ll usually have no memory of your interrupted breathing, so you may be unaware you have a problem.
+When to get medical advice
+Speak to your GP practice if:
+you think you might have OSA, especially if you’re very sleepy during the day
+They can check for other possible reasons for your symptoms and may refer you to a sleep specialist.
+Diagnosing OSA
+Before seeing your GP it may be helpful to ask a partner, friend or relative to watch you while you’re asleep, if possible. If you have OSA, they may be able to spot breathing pauses.
+It may also help to fill out an
+Epworth Sleepiness Scale
+questionnaire. This asks how likely it is for you to doze off in different situations. For example, watching TV, sitting in a meeting or while driving. The final score will help your doctor determine whether you may have a sleep disorder.
+Your GP will usually ask questions about your symptoms. They may also take your blood pressure and a blood sample. This can help to rule out other conditions that may explain your tiredness. For example, an underactive thyroid gland (
+hypothyroidism
+) or
+anaemia
+.
+The next step will usually be an assessment through the night (sleep study). Your sleeping pattern will be checked to find whether or not you have a high number of breathing pauses through the night. It’s common to have breathing pauses through the night but a high number is abnormal. Your GP can refer you to specialist clinics or hospital departments that help investigate and treat people with sleep disorders.
+Observing your sleep
+The sleep specialists at the sleep centre may ask you about your symptoms and medical history, and carry out a physical examination.
+This may include measuring your height and weight to work out your
+body mass index (BMI)
+, as well as measuring your neck circumference. This is because being overweight and having a large neck can increase your risk of OSA.
+The sleep specialists will then arrange for your sleep to be assessed overnight. This can be done either by:
+taking some monitoring equipment home with you and bringing it back the next day for them to analyse – this is common
+spending the night at the clinic – this is rare
+Testing at home
+In many cases the sleep centre will teach you how to use portable recording equipment while you sleep at home.
+The equipment you are given may include:
+a breathing sensor at your nose or mouth
+sensors to monitor your heart rate
+bands that are placed around your chest
+oxygen sensors that are put on your finger
+a small sensor that sticks on your chin
+The equipment records oxygen levels, breathing movements, heart rate, snoring, and body sleeping position through the night.
+If more information is needed, you may be asked to spend the night at the sleep centre.
+Testing at a sleep centre
+The main test carried out to analyse your sleep at a sleep centre is known as polysomnography.
+During the night, several different parts of your body will be carefully monitored while you sleep.
+Bands and small metallic discs called electrodes are placed on the surface of your skin and different parts of your body. Sensors are also placed on your legs and an oxygen sensor will be attached to your finger.
+Different tests will be carried out during polysomnography, including:
+electroencephalography (EEG) – this monitors brain waves
+electromyography (EMG) – this monitors muscle tone
+recordings of movements in your chest and abdomen
+recordings of airflow through your mouth and nose
+pulse oximetry – this measures your heart rate and blood oxygen levels
+electrocardiography (ECG) – this monitors your heart
+Sound recording and video equipment may also be used.
+If OSA is diagnosed during the early part of the night, you may be given continuous positive airway pressure (CPAP) treatment. CPAP involves using a mask that delivers constant compressed air to the airway and stops it closing, which prevents OSA.
+Once the tests have been completed, staff at the sleep centre should have a good idea about whether or not you have OSA. If you do, they can determine how much it is interrupting your sleep and recommend the right treatment.
+Determining the severity of OSA
+The severity of OSA is determined by how many breathing pauses you have per hour of sleep. These episodes are measured using the apnoea-hypopnoea index (AHI).
+Severity is measured using the following criteria:
+mild – an AHI reading of 5 to 14 episodes an hour
+moderate – an AHI reading of 15 to 30 episodes an hour
+severe – an AHI reading of more than 30 episodes an hour
+Treatment is most likely to be beneficial in people with moderate or severe OSA. Treatment is also most likely to help people who are very sleepy during the day. However, treatment may also help some people with mild OSA.
+Treatment for OSA
+There are treatments that can reduce the symptoms of OSA.
+Things you can do to help your symptoms
+Lifestyle changes include:
+losing weight
+stopping smoking
+cutting down on alcohol
+sleeping on your side
+avoiding sedative medications and sleeping tablets
+Continuous positive airway pressure (CPAP)
+People with moderate to severe OSA usually need to use a continuous positive airway pressure (CPAP) device. It delivers a continuous supply of compressed air through a mask. This prevents your airway closing while you sleep.
+CPAP can feel peculiar to start with and you may be tempted to stop using it. But people who persevere usually soon get used to it and their symptoms improve significantly.
+CPAP is available on the NHS and is the most effective therapy for treating severe cases of OSA. Telemonitoring may be used to check how well CPAP is working for you. Telemonitoring means healthcare professionals can check your use of CPAP therapy. They can see if there are any issues that they can help with and make adjustments where needed.
+As well as reducing symptoms such as snoring and tiredness, it can also reduce the risk of complications of OSA in people who have symptoms, such as
+high blood pressure
+.
+Possible side effects of using a CPAP device can include:
+mask discomfort
+nasal congestion, runny nose or irritation
+difficulty breathing through your nose
+headaches and ear pain
+stomach pain and flatulence (wind)
+claustrophobia
+Mandibular advancement device (MAD)
+A mandibular advancement device (MAD) is a dental appliance, like a gum shield, sometimes used to treat mild OSA.
+They’re not generally recommended for more severe OSA. But they may be an option if a CPAP device isn’t right for you.
+A MAD is worn over your teeth when you’re asleep. It holds your jaw and tongue forward to increase the space at the back of your throat and reduce the narrowing of your airway that causes snoring.
+It’s recommended you have a MAD made for you by a dentist with training and experience in treating sleep apnoea. MADs aren’t always available on the NHS, so you may need to pay for the device privately through a dentist or orthodontist.
+A MAD may not be a suitable treatment for you if you don’t have many – or any – teeth. If you have dental caps, crowns or bridgework, speak to your dentist to make sure they won’t be stressed or damaged by a MAD.
+Surgery
+Surgery may also be an option if OSA is thought to be the result of a physical problem that can be corrected surgically. For example, an enlarged tonsillar tissue. For most people surgery isn’t appropriate. It may only be considered as a last resort if other treatments haven’t helped.
+Support groups
+OSA can have a significant impact on the quality of life for someone with the condition, as well as their friends and families.
+It can cause physical problems tiredness and headaches. It can also have a significant emotional impact and affect your relationships with others.
+Asthma + Lung UK
+and
+Sleep Apnoea Trust
+provide support and advice about living with OSA.
+Complications of OSA
+Treatments can often help control the symptoms of OSA, but they’ll need to be lifelong in most cases.
+If OSA is left untreated, it can cause problems such as poor performance at work and school, and placing a strain on your relationships.
+Poorly controlled OSA may also increase your risk of:
+developing
+high blood pressure (hypertension)
+having a
+stroke
+or
+heart attack
+developing an irregular heartbeat – such as
+atrial fibrillation
+developing
+type 2 diabetes
+– although it’s unclear if this is the result of an underlying cause, such as obesity
+Driving
+Someone who has been deprived of sleep because of OSA may be more likely to be involved in a car accident. If you’re diagnosed with OSA, it may mean your ability to drive is affected. You must inform the DVLA about a medical condition that could impact your driving ability.
+Once a diagnosis of OSA has been made, you shouldn’t drive until your symptoms are well controlled.
+GOV.UK has advice about
+how to tell the DVLA about a medical condition
+.
+Source:
+Scottish Government

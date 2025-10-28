@@ -82,6 +82,11 @@ class AdviceOut(BaseModel):
     when_to_seek_care: List[str] = []
     disclaimer: str
 
+    sources: List[str] = Field(
+        default_factory=list,
+        description="List of source document names/URIs used for RAG retrieval."
+    )
+
 
 # ------------------------------------------------------
 # Step 5: Define the referral response model (clinician-facing)

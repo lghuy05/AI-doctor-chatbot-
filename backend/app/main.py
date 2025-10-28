@@ -4,6 +4,11 @@ import os
 from sqlalchemy import text
 from app.database.database import engine, Base
 from app.routes import triage, advice, referrals, rx_draft, auth
+import rag_service #triggers initialize_rag_service()
+
+from dotenv import load_dotenv
+load_dotenv() #moved in from openrouter_client.py
+
 
 try:
     Base.metadata.create_all(bind=engine)

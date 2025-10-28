@@ -7,9 +7,11 @@
 # This makes development and local testing much easier.
 import requests
 import os
-from dotenv import load_dotenv
 
-load_dotenv()  # so local runs pick up .env
+
+#from dotenv import load_dotenv
+#load_dotenv()  # so local runs pick up .env
+#these are moved to main.py
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY or not OPENROUTER_API_KEY.startswith("sk-or-"):
