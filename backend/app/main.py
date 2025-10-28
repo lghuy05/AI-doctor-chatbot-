@@ -11,7 +11,6 @@ load_dotenv()
 
 try:
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created successfully!")
 except Exception as e:
     print(f"❌ Error creating tables: {e}")
 
@@ -21,8 +20,8 @@ app = FastAPI(title="AI Doctor Backend (OpenRouter)")
 EHR_ENABLED = True
 FHIR_BASE_URL = os.getenv("FHIR_BASE_URL", "https://hapi.fhir.org/baseR4")
 
-print(f"🔧 EHR Integration: {'ENABLED' if EHR_ENABLED else 'DISABLED'}")
-print(f"🔧 FHIR Server: {FHIR_BASE_URL}")
+print(f" EHR Integration: {'ENABLED' if EHR_ENABLED else 'DISABLED'}")
+print(f" FHIR Server: {FHIR_BASE_URL}")
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
@@ -49,7 +48,7 @@ async def authenticate_request(request: Request, call_next):
         "/openapi.json",
         "/favicon.ico",
         "/patient/discover",
-        "/patient/profile/",
+        "/patient/profile",
         "/ehr-advice",
     ]
     if request.url.path in public_paths:
@@ -63,7 +62,6 @@ async def authenticate_request(request: Request, call_next):
     token = auth_header.replace("Bearer ", "")
 
     # TODO: Implement your actual token verification logic
-    # For now, we'll just validate the token exists and let it pass
     if not token:
         raise HTTPException(status_code=401, detail="Invalid token")
 
