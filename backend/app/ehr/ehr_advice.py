@@ -5,6 +5,7 @@ from app.services.fhir_service import FHIRService
 from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
 from app.schemas.profile_schemas import PatientProfile
+from rag_service import retrieve_context #for RAG retrieval
 
 router = APIRouter()
 
@@ -45,14 +46,23 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
         except Exception as e:
             print(f"⚠️ EHR fetch failed: {e}, proceeding without EHR context")
 
-    # 3. Enhanced LLM call with EHR context
+    # 3. RAG Retrieval Step (New) 
+    print(f"📚 Performing RAG retrieval for symptoms: {inp.symptoms}")
+    # Semantic search for relevant medical knowledge context
+    context_text, sources = retrieve_context(inp.symptoms, k=5) 
+    print(f"📋 RAG Context retrieved from {len(sources)} sources.")
+
+    # 4. Enhanced LLM call with EHR context and RAG context
     def build_messages():
         system = (
             "You are a clinical decision support assistant. "
-            "Consider the patient's existing conditions and medications from their EHR if available. "
+            "Your advice **MUST** be factually based **ONLY** on the provided 'CONTEXT'. " # <--- RAG instruction
+            "Consider the patient's existing conditions and medications from their EHR if available. " # <--- EHR instruction
             "NEVER diagnose. NEVER provide medication names/doses to patients. "
-            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer."
+            "If the context is insufficient, state: 'I cannot provide specific advice on this topic based on the available knowledge. Please consult a clinician.' "
+            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, sources[]."
         )
+        
 
         ehr_text = ""
         if ehr_context and (
@@ -73,23 +83,26 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
             ehr_text = "No EHR data available for this patient.\n\n"
 
         user = (
+            f"### CONTEXT (Medical Knowledge Base) ###\n" # <--- RAG Context Here
+            f"{context_text if context_text else 'No specific medical knowledge was found.'}\n\n"
+            f"### PATIENT MEDICAL HISTORY ###\n" # <--- EHR Context Here
             f"{ehr_text}"
-            f"PATIENT-REPORTED INFORMATION:\n"
+            f"### PATIENT-REPORTED INFORMATION ###\n"
             f"Age: {inp.age}\n"
             f"Gender: {inp.sex}\n"
             f"Symptoms: {inp.symptoms}\n"
             f"Duration: {inp.duration}\n"
             f"Patient-Reported Meds: {inp.meds}\n"
             f"Patient-Reported Conditions: {inp.conditions}\n\n"
-            f"Provide personalized advice considering their complete medical history.\n"
+            f"Provide personalized advice considering their complete medical history and using **ONLY** the provided CONTEXT.\n"
             f"JSON Schema:\n"
-            + '{"advice":[{"step":"Hydration","details":"Small sips of water."}],"when_to_seek_care":["Trouble breathing"],"disclaimer":"This is not a diagnosis."}'
+            + '{"advice":[{"step":"Hydration","details":"Small sips of water."}],"when_to_seek_care":["Trouble breathing"],"disclaimer":"This is not a diagnosis.","sources":["Source A.pdf", "Source B.pdf"]}'
         )
-
+        print(system, user)
         return [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ]
 
-    print("🤖 Generating advice with EHR context...")
+    print("Generating advice with EHR context and RAG context...")
     return require_json_with_retry(build_messages)
