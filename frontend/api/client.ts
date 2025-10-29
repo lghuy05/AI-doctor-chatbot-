@@ -5,7 +5,6 @@ import { router } from 'expo-router';
 
 const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
@@ -42,11 +41,9 @@ api.interceptors.response.use(
     console.log('❌ API Error:', error.response?.status, error.response?.data);
 
     if (error.response?.status === 401) {
-      // Token expired or invalid
       console.log('🔄 Token expired, redirecting to login...');
       removeToken();
 
-      // Redirect to login screen
       setTimeout(() => {
         if (router.canGoBack()) {
           router.replace('/login');

@@ -53,6 +53,7 @@ class SymptomInput(BaseModel):
     meds: List[str] = Field(default_factory=list, description="Current medications")
     conditions: List[str] = Field(default_factory=list, description="Known conditions")
     duration: Optional[str] = Field(None, description="e.g., '2 days'")
+    patient_id: Optional[str] = None
 
 
 # ------------------------------------------------------
