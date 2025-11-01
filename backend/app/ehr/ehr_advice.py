@@ -14,38 +14,23 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
     # 1. Triage first (safety check)
     triage = triage_rules(inp.symptoms)
     if triage.risk == "emergency":
-        raise HTTPException(400, "Possible emergency. Call emergency services now.")
+        raise HTTPException(
+            400, "Possible emergency. Call emergency services now.")
 
     # 2. Get EHR data for LLM context
-    ehr_context = {}
-    patient_id = inp.patient_id
-
-    if patient_id:
-        print(f"🔍 Fetching EHR data for patient: {patient_id}")
-        try:
-            profile_data = FHIRService.get_patient_profile(patient_id)
-            if profile_data:
-                ehr_context = {
-                    "ehr_medications": [
-                        med["name"] for med in profile_data["active_medications"]
-                    ],
-                    "ehr_conditions": [
-                        cond["name"] for cond in profile_data["medical_conditions"]
-                    ],
-                    "ehr_age": profile_data.get("age"),
-                    "ehr_gender": profile_data.get("gender"),
-                }
-                print(
-                    f"📋 EHR Context: {len(ehr_context['ehr_medications'])} meds, {
-                        len(ehr_context['ehr_conditions'])
-                    } conditions"
-                )
-            else:
-                print("⚠️ No EHR data found for patient, proceeding without EHR context")
-        except Exception as e:
-            print(f"⚠️ EHR fetch failed: {e}, proceeding without EHR context")
-
+    ehr_context = {
+        "ehr_medications": inp.meds,
+        "ehr_conditions": inp.conditions,
+        "ehr_age": inp.age,
+        "ehr_gender": inp.sex,
+    }
+    print(
+        f"📋 Using patient-provided data: {len(inp.meds)} meds, {
+            len(inp.conditions)
+        } conditions"
+    )
     # 3. Enhanced LLM call with EHR context
+
     def build_messages():
         system = (
             "You are a clinical decision support assistant. "
@@ -56,7 +41,8 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
 
         ehr_text = ""
         if ehr_context and (
-            ehr_context.get("ehr_medications") or ehr_context.get("ehr_conditions")
+            ehr_context.get("ehr_medications") or ehr_context.get(
+                "ehr_conditions")
         ):
             ehr_text = (
                 f"EHR MEDICAL HISTORY:\n"
@@ -67,12 +53,12 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
                     ', '.join(ehr_context.get('ehr_conditions', []))
                 }\n"
                 f"EHR Age: {ehr_context.get('ehr_age', 'Not specified')}\n"
-                f"EHR Gender: {ehr_context.get('ehr_gender', 'Not specified')}\n\n"
-            )
+                f"EHR Gender: {ehr_context.get(
+                    'ehr_gender', 'Not specified')}\n\n"
         else:
-            ehr_text = "No EHR data available for this patient.\n\n"
+            ehr_text="No EHR data available for this patient.\n\n"
 
-        user = (
+        user=(
             f"{ehr_text}"
             f"PATIENT-REPORTED INFORMATION:\n"
             f"Age: {inp.age}\n"
@@ -92,4 +78,5 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
         ]
 
     print("🤖 Generating advice with EHR context...")
+    return require_json_with_retry(build_messages)
     return require_json_with_retry(build_messages)

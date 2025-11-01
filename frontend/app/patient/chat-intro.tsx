@@ -78,7 +78,8 @@ export default function ChatIntroScreen() {
       symptoms: message.trim(),
       meds: patientContext.medications,
       conditions: patientContext.conditions,
-      duration: "unknown"
+      duration: "unknown",
+      patient_id: "example"
     };
   };
 
