@@ -134,7 +134,3 @@ def fetch_article_from_ids(all_article_ids):
             print(f"Error {e}")
             continue
     return articles
-
-
-articles = get_article_from_pubmed(common_symptoms)
-print(articles)
