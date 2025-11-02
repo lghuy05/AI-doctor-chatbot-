@@ -11,14 +11,35 @@
       "resizeMode": "contain",
       "backgroundColor": "#E8EFF7"
     },
-    "ios": { "supportsTablet": true },
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E8EFF7"
       }
     },
-    "web": { "bundler": "metro", "output": "static" },
-    "plugins": ["expo-router"]
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "c2eefcdb-4eef-432f-8066-85b4153d97db"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c2eefcdb-4eef-432f-8066-85b4153d97db"
+    }
   }
 }
