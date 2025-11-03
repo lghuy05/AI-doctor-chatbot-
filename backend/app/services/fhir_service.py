@@ -307,8 +307,7 @@ class FHIRService:
     def discover_patients() -> List[Dict]:
         """Discover available test patients"""
         try:
-            response = requests.get(
-                f"{FHIR_BASE_URL}/Patient?_count=5", timeout=10)
+            response = requests.get(f"{FHIR_BASE_URL}/Patient?_count=5", timeout=10)
             if response.status_code != 200:
                 return []
 
@@ -333,4 +332,4 @@ class FHIRService:
 
         except Exception as e:
             print(f"❌ Error discovering patients: {e}")
-            return []https: // openrouter.ai/api/v1/chat/completions
+            return []
