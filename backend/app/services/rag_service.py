@@ -1,7 +1,7 @@
 import chromadb
 from vector_store import query_medical_knowledge
 from pubmed_service import get_article_from_pubmed
-from app.openrouter_client import get_article_from_pubmed
+from app.openrouter_client import extract_medical_keywords
 
 
 def get_medical_context(symptoms: str, min_results: int = 5):
