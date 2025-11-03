@@ -5,7 +5,7 @@ from app.services.fhir_service import FHIRService
 from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
 from app.schemas.profile_schemas import PatientProfile
-# from app.services.rag_service import get_medical_context
+from app.services.rag_service import get_medical_context
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
     if triage.risk == "emergency":
         raise HTTPException(400, "Possible emergency. Call emergency services now.")
 
-    # medical_context = get_medical_context(inp.symptoms)
+    medical_context = get_medical_context(inp.symptoms)
 
     # 2. Get EHR data for LLM context
     ehr_context = {
@@ -60,27 +60,27 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
         else:
             ehr_text = "No EHR data available for this patient.\n\n"
 
-        # research_text = ""
-        # if (
-        #     medical_context
-        #     and "article" in medical_context
-        #     and medical_context["article"]
-        # ):
-        #     research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
-        #     for i, article in enumerate(medical_context["article"][:5], 1):
-        #         research_text += (
-        #             f"{i}. {article['title']} ({article['year']}) - "
-        #             f"Relevance: {article['relevance_score']:.2f}\n"
-        #             f"Key findings: {article['content'][:200]}...\n\n"
-        #         )
-        # else:
-        #     research_text = (
-        #         "No recent medical research text available for these symptoms."
-        #     )
+        research_text = ""
+        if (
+            medical_context
+            and "article" in medical_context
+            and medical_context["article"]
+        ):
+            research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
+            for i, article in enumerate(medical_context["article"][:5], 1):
+                research_text += (
+                    f"{i}. {article['title']} ({article['year']}) - "
+                    f"Relevance: {article['relevance_score']:.2f}\n"
+                    f"Key findings: {article['content'][:200]}...\n\n"
+                )
+        else:
+            research_text = (
+                "No recent medical research text available for these symptoms."
+            )
 
         user = (
             f"{ehr_text}"
-            # f"{research_text}"
+            f"{research_text}"
             f"PATIENT-REPORTED INFORMATION:\n"
             f"Age: {inp.age}\n"
             f"Gender: {inp.sex}\n"
