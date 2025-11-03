@@ -79,7 +79,7 @@ def get_medical_context(symptoms: str, min_results: int = 5):
 
             return {"source": "chromadb", "articles": formatted_articles}
     except Exception as e:
-        return {"error": str(e), "article": []}
+        return {"error": str(e), "articles": []}
     return {"error": "Insufficient medical context found", "articles": []}
 
 
