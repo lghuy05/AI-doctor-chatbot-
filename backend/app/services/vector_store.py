@@ -71,7 +71,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # print("testing query")
-    # result = query_medical_knowledge("I feel headache and insomnia", 5)
-    # print("Query results: ", result)
-    check_collection()
+    result = query_medical_knowledge("I feel headache and insomnia", 5)
+    print(result)

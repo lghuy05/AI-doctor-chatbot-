@@ -43,6 +43,37 @@ APP_TITLE = os.getenv("APP_TITLE", "AI Doctor App")
 # and returns the model’s response text.
 
 
+def extract_medical_keywords(symptoms_text: str) -> list[str] | None:
+    prompt = f"""
+    Extract the key medical symptoms and conditions from this patient description.
+    Return ONLY a comma-separated LIST of medical terms. Be concise and clinical.
+    The result should be a list that contains string datatype.
+
+    PATIENT DESCRIPTION:
+    "{symptoms_text}"
+
+    MEDICAL KEYWORDS:
+    """
+    try:
+        response = chat_completion(
+            [
+                {
+                    "role": "system",
+                    "content": "You are a medical transcription assistant. Extract only medical symptoms and conditions.",
+                },
+                {"role": "user", "content": prompt},
+            ]
+        )
+        keywords = response.strip()
+        if "\n" in keywords:
+            keywords = keywords.split("\n")[0]
+        keywords = keywords.split(",")
+        return keywords
+    except Exception as e:
+        print(f"LLM extraction failed: {e}")
+        return None
+
+
 def chat_completion(messages, model="meta-llama/llama-3.3-70b-instruct:free"):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
