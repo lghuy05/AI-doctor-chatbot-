@@ -1,5 +1,5 @@
 import chromadb
-from pubmed_service import get_article_from_pubmed
+from app.services.pubmed_service import get_article_from_pubmed
 
 
 def query_medical_knowledge(query: str, n_results: int):
