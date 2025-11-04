@@ -73,3 +73,4 @@ def main():
 if __name__ == "__main__":
     result = query_medical_knowledge("I feel headache and insomnia", 5)
     print(result)
+    # main()

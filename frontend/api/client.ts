@@ -16,6 +16,7 @@ const api = axios.create({
 // ✅ Request interceptor - automatically add token to all requests
 api.interceptors.request.use(
   async (config) => {
+    console.log(`🟡 Making ${config.method?.toUpperCase()} request to: ${config.url}`);
     try {
       const token = await getToken();
       if (token) {
@@ -25,9 +26,13 @@ api.interceptors.request.use(
     } catch (error) {
       console.error('❌ Error adding token to request:', error);
     }
+    if (config.data) {
+      console.log('Request payload: ', JSON.stringify(config.data, null, 2));
+    }
     return config;
   },
   (error) => {
+    console.log(error);
     return Promise.reject(error);
   }
 );
@@ -35,6 +40,7 @@ api.interceptors.request.use(
 // ✅ Response interceptor - handle token expiration
 api.interceptors.response.use(
   (response) => {
+    console.log(`Response ${response.status} from: ${response.config.url}`);
     return response;
   },
   (error) => {
@@ -51,6 +57,9 @@ api.interceptors.response.use(
           router.navigate('/login');
         }
       }, 100);
+    }
+    if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+      console.log('🔴 Network/CORS Error - Check backend CORS configuration');
     }
 
     return Promise.reject(error);
