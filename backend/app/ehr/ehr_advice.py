@@ -63,11 +63,11 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
         research_text = ""
         if (
             medical_context
-            and "article" in medical_context
-            and medical_context["article"]
+            and "articles" in medical_context
+            and medical_context["articles"]
         ):
             research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
-            for i, article in enumerate(medical_context["article"][:5], 1):
+            for i, article in enumerate(medical_context["articles"][:5], 1):
                 research_text += (
                     f"{i}. {article['title']} ({article['year']}) - "
                     f"Relevance: {article['relevance_score']:.2f}\n"
