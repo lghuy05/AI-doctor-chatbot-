@@ -76,12 +76,14 @@ class TriageOut(BaseModel):
 class AdviceStep(BaseModel):
     step: str
     details: str
+    research_basis: Optional[str] = None
 
 
 class AdviceOut(BaseModel):
     advice: List[AdviceStep] = []
     when_to_seek_care: List[str] = []
     disclaimer: str
+    research_references: List[str] = []
 
 
 # ------------------------------------------------------
