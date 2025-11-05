@@ -27,7 +27,7 @@ interface PatientProfile {
   }>;
   last_updated: string;
 }
-//hi
+
 interface PatientStore {
   patientProfile: PatientProfile | null;
   isLoading: boolean;
@@ -43,6 +43,52 @@ interface PatientStore {
 }
 
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+
+// ✅ ADD DEDUPLICATION FUNCTION
+const removeDuplicateMedications = (medications: any[]) => {
+  const seen = new Set();
+
+  // Filter out duplicates based on name + prescriber combination
+  const uniqueMeds = medications.filter(med => {
+    if (!med.name) return false; // Skip if no name
+
+    // Create a unique identifier using name and prescriber
+    const identifier = `${med.name.toLowerCase().trim()}-${med.prescriber?.toLowerCase().trim() || 'unknown'}`;
+
+    if (seen.has(identifier)) {
+      console.log(`🔄 Removing duplicate medication: ${med.name}`);
+      return false;
+    }
+
+    seen.add(identifier);
+    return true;
+  });
+
+  console.log(`✅ Deduplicated ${medications.length} -> ${uniqueMeds.length} medications`);
+  return uniqueMeds;
+};
+
+// ✅ ADD DEDUPLICATION FOR CONDITIONS TOO (for consistency)
+const removeDuplicateConditions = (conditions: any[]) => {
+  const seen = new Set();
+
+  const uniqueConditions = conditions.filter(condition => {
+    if (!condition.name) return false;
+
+    const identifier = condition.name.toLowerCase().trim();
+
+    if (seen.has(identifier)) {
+      console.log(`🔄 Removing duplicate condition: ${condition.name}`);
+      return false;
+    }
+
+    seen.add(identifier);
+    return true;
+  });
+
+  console.log(`✅ Deduplicated ${conditions.length} -> ${uniqueConditions.length} conditions`);
+  return uniqueConditions;
+};
 
 export const usePatientStore = create<PatientStore>()(
   persist(
@@ -71,18 +117,42 @@ export const usePatientStore = create<PatientStore>()(
           const response = await api.get(`/patient/profile/${patientId}`);
 
           if (response.data.success && response.data.profile) {
+            // ✅ APPLY DEDUPLICATION TO BOTH MEDICATIONS AND CONDITIONS
+            const profile = response.data.profile;
+
+            let processedProfile = { ...profile };
+
+            // Deduplicate medications if they exist
+            if (processedProfile.active_medications) {
+              processedProfile.active_medications = removeDuplicateMedications(
+                processedProfile.active_medications
+              );
+            }
+
+            // Deduplicate conditions if they exist
+            if (processedProfile.medical_conditions) {
+              processedProfile.medical_conditions = removeDuplicateConditions(
+                processedProfile.medical_conditions
+              );
+            }
+
             set({
-              patientProfile: response.data.profile,
+              patientProfile: processedProfile,
               isLoading: false,
               lastFetched: Date.now(),
               error: null,
             });
-            console.log(`✅ Patient profile cached: ${response.data.profile.name}`);
+
+            console.log(`✅ Patient profile cached: ${processedProfile.name}`);
+            console.log(`💊 Medications: ${processedProfile.active_medications?.length || 0}`);
+            console.log(`🩺 Conditions: ${processedProfile.medical_conditions?.length || 0}`);
+
           } else {
             set({
               error: response.data.error || 'Failed to load patient profile',
               isLoading: false,
             });
+            console.log('❌ Failed to load patient profile:', response.data.error);
           }
         } catch (error: any) {
           console.error('❌ Error fetching patient profile:', error);
@@ -124,6 +194,7 @@ export const usePatientStore = create<PatientStore>()(
           lastFetched: null,
           error: null,
         });
+        console.log('🗑️ Patient profile cleared from store');
       },
 
       getPatientContext: () => {

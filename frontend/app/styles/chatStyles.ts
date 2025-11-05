@@ -339,4 +339,23 @@ export const chatStyles = StyleSheet.create({
   textLg: {
     fontSize: 16,
   },
+  menuButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
 });
+

@@ -1,11 +1,11 @@
-// app/chat-intro.tsx - UPDATED WITH PATIENT DATA INTEGRATION
+// app/(drawer)/index.tsx - UPDATED WITH EXPO ROUTER DRAWER
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, SafeAreaView,
   ActivityIndicator, ScrollView, Alert
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { chatStyles } from '../styles/chatStyles';
 import api from '../../api/client';
 import { usePatientStore } from '../../hooks/usePatientStore';
@@ -34,6 +34,9 @@ export default function ChatIntroScreen() {
     error: patientError
   } = usePatientStore();
 
+  // Navigation for drawer - using Expo Router's navigation
+  const navigation = useNavigation();
+
   // Load patient profile on component mount
   useEffect(() => {
     const loadPatientData = async () => {
@@ -42,7 +45,7 @@ export default function ChatIntroScreen() {
         setPatientDataLoaded(true);
       } catch (error) {
         console.error('Failed to load patient data:', error);
-        setPatientDataLoaded(true); // Still set to true to allow chat with fallback
+        setPatientDataLoaded(true);
       }
     };
 
@@ -163,7 +166,6 @@ export default function ChatIntroScreen() {
 
       setOutput({ error: errorMessage });
 
-      // Show alert for critical errors
       if (error.response?.status >= 500) {
         Alert.alert('Service Unavailable', errorMessage);
       }
@@ -182,21 +184,40 @@ export default function ChatIntroScreen() {
     }
   };
 
+  const handleEmergencyCall = () => {
+    Alert.alert(
+      'Call Emergency Services',
+      'Do you want to call 911?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call 911',
+          onPress: () => {
+            console.log('Calling 911...');
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={chatStyles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.select({ ios: 'padding', android: undefined })}
         style={chatStyles.container}
       >
-        {/* Header with Profile Button */}
+        {/* Header with Drawer Toggle */}
         <View style={chatStyles.headerRow}>
-          <TouchableOpacity style={chatStyles.back} onPress={() => router.back()}>
-            <Text style={chatStyles.backText}>‹</Text>
+          <TouchableOpacity
+            style={chatStyles.menuButton}
+            onPress={() => navigation.dispatch({ type: 'OPEN_DRAWER' } as any)}
+          >
+            <Text style={chatStyles.menuText}>☰</Text>
           </TouchableOpacity>
+
           <Text style={chatStyles.title}>AI Doctor App</Text>
-          <TouchableOpacity onPress={() => router.push('/patient/profile')}>
-            <Text style={chatStyles.backText}>👤</Text>
-          </TouchableOpacity>
+
+          <View style={chatStyles.headerSpacer} />
         </View>
 
         {/* Patient Data Status */}
@@ -236,10 +257,14 @@ export default function ChatIntroScreen() {
         </View>
 
         {/* Chat Output */}
-        <ScrollView style={chatStyles.scrollView} contentContainerStyle={chatStyles.scrollContent}>
+        <ScrollView
+          style={chatStyles.scrollView}
+          contentContainerStyle={chatStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {loading && (
             <View style={[chatStyles.card, chatStyles.loadingCard]}>
-              <ActivityIndicator />
+              <ActivityIndicator size="large" color="#3B82F6" />
               <Text style={chatStyles.loadingText}>Analyzing your symptoms...</Text>
             </View>
           )}
@@ -265,7 +290,10 @@ export default function ChatIntroScreen() {
               <Text style={chatStyles.emergencyTitle}>🚨 Emergency Alert</Text>
               <Text style={chatStyles.emergencyText}>{output.notice}</Text>
               <View style={chatStyles.emergencyActions}>
-                <TouchableOpacity style={chatStyles.emergencyButton}>
+                <TouchableOpacity
+                  style={chatStyles.emergencyButton}
+                  onPress={handleEmergencyCall}
+                >
                   <Text style={chatStyles.emergencyButtonText}>Call 911</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -323,6 +351,7 @@ export default function ChatIntroScreen() {
             returnKeyType="send"
             onSubmitEditing={send}
             multiline
+            maxLength={500}
           />
           <TouchableOpacity
             style={[
