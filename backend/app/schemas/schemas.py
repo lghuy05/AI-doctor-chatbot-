@@ -2,8 +2,7 @@
 # Step 1: Import Pydantic BaseModel and typing helpers
 # ------------------------------------------------------
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Literal, Optional
-
+from typing import List, Literal, Optional, Dict
 from app.database.database import Base
 
 # ------------------------------------------------------
@@ -118,3 +117,22 @@ class RxCandidate(BaseModel):
 class RxDraftOut(BaseModel):
     candidates: List[RxCandidate] = []
     notes: str = ""
+
+
+class SymptomIntensity(BaseModel):
+    symptom_name: str
+    intensity: int = Field(ge=1, le=10)
+    duration_minutes: Optional[int] = Field(default=0, ge=0)
+    notes: Optional[str] = None
+
+
+class SymptomAnalysis(BaseModel):
+    intensities: List[SymptomIntensity]
+    overall_severity: Optional[int] = Field(ge=1, le=10, default=None)
+
+
+class EnhancedAdviceOut(BaseModel):
+    advice: List[Dict[str, str]]
+    when_to_seek_care: List[str]
+    disclaimer: str
+    symptom_analysis: Optional[SymptomAnalysis] = None

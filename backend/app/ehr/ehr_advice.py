@@ -1,6 +1,6 @@
 # routes/ehr_advice.py
 from fastapi import APIRouter, HTTPException
-from app.schemas.schemas import SymptomInput, AdviceOut
+from app.schemas.schemas import SymptomInput, EnhancedAdviceOut
 from app.services.fhir_service import FHIRService
 from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
@@ -10,7 +10,7 @@ from app.services.rag_service import get_medical_context
 router = APIRouter()
 
 
-@router.post("/ehr-advice", response_model=AdviceOut)
+@router.post("/ehr-advice", response_model=EnhancedAdviceOut)
 def enhanced_advice_with_ehr(inp: SymptomInput):
     # 1. Triage first (safety check)
     triage = triage_rules(inp.symptoms)
