@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database.database import get_db
-from app.schemas.symptom_schemas import SymptomIntensityCreate, SymptomFrequencyUpdate
+from app.schemas.schemas import SymptomIntensityCreate, SymptomFrequencyUpdate
 from datetime import datetime, date
 from typing import List
 
