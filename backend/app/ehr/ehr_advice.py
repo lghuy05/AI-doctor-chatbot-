@@ -2,8 +2,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.database.database import get_db
-from app.schemas.schemas import SymptomInput, EnhancedAdviceOut
-from app.schemas.symptom_schemas import SymptomIntensityCreate
+from app.schemas.schemas import SymptomInput, EnhancedAdviceOut, SymptomIntensityCreate
 from app.services.fhir_service import FHIRService
 from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
