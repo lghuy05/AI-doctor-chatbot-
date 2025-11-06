@@ -46,21 +46,31 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
             "Consider the patient's existing conditions and medications from their EHR if available. "
             "Also consider the provided medical research context from PubMed when giving advice. "
             "NEVER diagnose. NEVER provide medication names/doses to patients. "
-            "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
-            "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty',... to determine intensity (1-10). "
-            "Estimate duration in minutes based on time-related words like 'today','the morning','hours', 'days', 'weeks', 'constant', 'intermittent'. "
-            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, symptom_analysis. "
-            "symptom_analysis should contain: intensities[] (each with symptom_name, intensity 1-10, duration_minutes, notes), and overall_severity (1-10)."
-            "Example JSON format: "
-            '{"advice":[{"step":"Hydration","details":"Small sips of water."}],'
-            '"when_to_seek_care":["Trouble breathing"],'
-            '"disclaimer":"This is not a diagnosis.",'
-            '"symptom_analysis":{'
-            '"intensities":['
-            '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain"},'
-            '{"symptom_name":"nausea","intensity":4,"duration_minutes":45,"notes":"Intermittent"}'
+            "CRITICAL: You MUST analyze symptom intensity and duration. "
+            "For intensity (1-10 scale): "
+            "- mild/annoying: 1-3, moderate/bothersome: 4-6, severe/debilitating: 7-10 "
+            "- Words like 'kinda', 'a little', 'slight': 2-3 "
+            "- Words like 'pretty', 'quite', 'moderate': 4-6 "
+            "- Words like 'very', 'really', 'severe': 7-8 "
+            "- Words like 'extreme', 'unbearable', 'worst ever': 9-10 "
+            "For duration in minutes: "
+            "- 'just started', 'today': 30-60 minutes "
+            "- 'this morning', 'few hours': 60-240 minutes "
+            "- 'all day', 'since yesterday': 480+ minutes "
+            "You MUST return JSON with this EXACT structure: "
+            "{"
+            '"advice": [{"step": "...", "details": "..."}],'
+            '"when_to_seek_care": ["..."],'
+            '"disclaimer": "...",'
+            '"symptom_analysis": {'
+            '"intensities": ['
+            '{"symptom_name": "headache", "intensity": 7, "duration_minutes": 180, "notes": "severe pain"},'
+            '{"symptom_name": "nausea", "intensity": 3, "duration_minutes": 180, "notes": "mild and intermittent"}'
             "],"
-            '"overall_severity":6}}'
+            '"overall_severity": 6'
+            "}"
+            "}"
+            "DO NOT include research_bases or research_references. ONLY use the specified JSON keys."
         )
         ehr_text = ""
         if ehr_context and (
