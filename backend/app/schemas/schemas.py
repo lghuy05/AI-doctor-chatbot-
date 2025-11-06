@@ -4,6 +4,8 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Literal, Optional, Dict
 from app.database.database import Base
+from datetime import datetime, time
+from decimal import Decimal
 
 # ------------------------------------------------------
 # Step 2: Define the request model the app expects from the client
@@ -136,3 +138,68 @@ class EnhancedAdviceOut(BaseModel):
     when_to_seek_care: List[str]
     disclaimer: str
     symptom_analysis: Optional[SymptomAnalysis] = None
+
+
+# Request schemas for incoming data
+class SymptomIntensityCreate(BaseModel):
+    user_id: int
+    symptom_name: str = Field(..., max_length=100)
+    intensity: int = Field(..., ge=1, le=10)
+    duration_minutes: Optional[int] = Field(default=0, ge=0)
+    notes: Optional[str] = None
+
+
+class SymptomFrequencyUpdate(BaseModel):
+    user_id: int
+    symptom_name: str = Field(..., max_length=100)
+    month_year: date
+    occurrence_count: int = Field(..., ge=1)
+    last_occurrence: datetime
+
+
+# Response schemas for database results
+class SymptomIntensityResponse(BaseModel):
+    id: int
+    user_id: int
+    symptom_name: str
+    intensity: int
+    duration_minutes: Optional[int]
+    notes: Optional[str]
+    reported_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SymptomFrequencyResponse(BaseModel):
+    user_id: int
+    symptom_name: str
+    month_year: date
+    occurrence_count: int
+    last_occurrence: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Analytics response schemas
+class SymptomIntensityAnalytics(BaseModel):
+    symptom_name: str
+    date: date
+    daily_avg_intensity: float
+    daily_occurrences: int
+    avg_duration: float
+
+
+class SymptomFrequencyAnalytics(BaseModel):
+    symptom_name: str
+    total_occurrences: int
+    last_occurrence: datetime
+
+
+class RecentSymptomResponse(BaseModel):
+    symptom_name: str
+    intensity: int
+    duration_minutes: Optional[int]
+    notes: Optional[str]
+    reported_at: datetime
