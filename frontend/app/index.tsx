@@ -34,5 +34,5 @@ export default function Index() {
     );
   }
 
-  return hasToken ? <Redirect href="./patient/chat-intro" /> : <Redirect href="./auth/login" />;
+  return hasToken ? <Redirect href="./(drawer)" /> : <Redirect href="./auth/login" />;
 }

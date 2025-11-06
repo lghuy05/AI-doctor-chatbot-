@@ -43,7 +43,7 @@ export default function LoginScreen() {
       // TODO: Store token securely (AsyncStorage, secure store, etc.)
       console.log('Login successful, token:', access_token);
 
-      router.replace('/patient/chat-intro');
+      router.replace('/(drawer)');
 
     } catch (error: any) {
       console.error('Login error:', error);

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from sqlalchemy import text
 from app.database.database import engine, Base
-from app.routes import triage, advice, referrals, rx_draft, auth
+from app.routes import triage, advice, referrals, rx_draft, auth, patient_profile
 from dotenv import load_dotenv
 
 load_dotenv()
