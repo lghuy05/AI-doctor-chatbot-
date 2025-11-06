@@ -4,7 +4,7 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Literal, Optional, Dict
 from app.database.database import Base
-from datetime import datetime, time
+from datetime import datetime, date
 from decimal import Decimal
 
 # ------------------------------------------------------
