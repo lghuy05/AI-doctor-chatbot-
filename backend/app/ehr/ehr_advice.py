@@ -34,14 +34,34 @@ def enhanced_advice_with_ehr(inp: SymptomInput):
     # 3. Enhanced LLM call with EHR context
 
     def build_messages():
+        # system = (
+        #     "You are a clinical decision support assistant. "
+        #     "Consider the patient's existing conditions and medications from their EHR if available. "
+        #     "Also consider the provided medical research context from PubMed when giving advice"
+        #     "NEVER diagnose. NEVER provide medication names/doses to patients. "
+        #     "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer."
+        # )
         system = (
             "You are a clinical decision support assistant. "
             "Consider the patient's existing conditions and medications from their EHR if available. "
-            "Also consider the provided medical research context from PubMed when giving advice"
+            "Also consider the provided medical research context from PubMed when giving advice. "
             "NEVER diagnose. NEVER provide medication names/doses to patients. "
-            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer."
+            "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
+            "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty',... to determine intensity (1-10). "
+            "Estimate duration in minutes based on time-related words like 'today','the morning','hours', 'days', 'weeks', 'constant', 'intermittent'. "
+            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, symptom_analysis. "
+            "symptom_analysis should contain: intensities[] (each with symptom_name, intensity 1-10, duration_minutes, notes), and overall_severity (1-10)."
+            "Example JSON format: "
+            '{"advice":[{"step":"Hydration","details":"Small sips of water."}],'
+            '"when_to_seek_care":["Trouble breathing"],'
+            '"disclaimer":"This is not a diagnosis.",'
+            '"symptom_analysis":{'
+            '"intensities":['
+            '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain"},'
+            '{"symptom_name":"nausea","intensity":4,"duration_minutes":45,"notes":"Intermittent"}'
+            "],"
+            '"overall_severity":6}}'
         )
-
         ehr_text = ""
         if ehr_context and (
             ehr_context.get("ehr_medications") or ehr_context.get("ehr_conditions")
