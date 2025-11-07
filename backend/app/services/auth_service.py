@@ -2,9 +2,11 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
 import os
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -51,4 +53,40 @@ def authenticate_user(db, username: str, password: str):
         print(f"❌ Password incorrect for user: {user.username}")
         return False
     print(f"✅ Authentication successful for user: {user.username}")
+    return user
+
+
+def verify_token(token: str) -> dict:
+    """Verify JWT token and return payload"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithm=ALGORITHM)
+        return payload
+    except JWTError as e:
+        print(f"❌ Token verification failed: {e}")
+        return None
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
+    from app.database.models import User
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    payload = verify_token(token)
+    if not payload:
+        raise credentials_exception
+
+    username: str = payload.get("sub")
+    if username is None:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.username == username).first()
+    if user is None:
+        raise credentials_exception
+
     return user

@@ -185,3 +185,39 @@ class SymptomTrackingService:
         except Exception as e:
             print(f"❌ Error fetching symptom summary: {e}")
             return {}
+
+    @staticmethod
+    def get_symptom_trends(db: Session, user_id: int, period_days: int = 30) -> Dict:
+        """Get comprehensive symptom trends for analytics"""
+        try:
+            # Get intensity history
+            intensity_history = SymptomTrackingService.get_symptom_intensity_history(
+                db, user_id, period_days
+            )
+
+            # Get frequency data
+            frequency_data = SymptomTrackingService.get_symptom_frequency(
+                db,
+                user_id,
+                period_days // 30,  # Convert to months
+            )
+
+            # Get recent symptoms
+            recent_symptoms = SymptomTrackingService.get_recent_symptoms(
+                db, user_id, 20
+            )
+
+            # Get summary
+            summary = SymptomTrackingService.get_symptom_summary(db, user_id)
+
+            return {
+                "intensity_history": intensity_history,
+                "frequency_data": frequency_data,
+                "recent_symptoms": recent_symptoms,
+                "summary": summary,
+                "period_days": period_days,
+            }
+
+        except Exception as e:
+            print(f"❌ Error getting symptom trends: {e}")
+            return {}

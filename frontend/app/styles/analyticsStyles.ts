@@ -1,4 +1,4 @@
-// styles/analyticsStyles.ts
+// styles/analyticsStyles.ts - COMPLETELY UPDATED
 import { StyleSheet } from 'react-native';
 
 export const analyticsStyles = StyleSheet.create({
@@ -23,7 +23,7 @@ export const analyticsStyles = StyleSheet.create({
     elevation: 4,
     marginBottom: 8,
   },
-  backButton: {
+  menuButton: {
     width: 40,
     height: 40,
     alignItems: 'center',
@@ -36,8 +36,8 @@ export const analyticsStyles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  backText: {
-    fontSize: 20,
+  menuText: {
+    fontSize: 18,
     fontWeight: '600',
     color: '#3B82F6',
   },
@@ -49,9 +49,17 @@ export const analyticsStyles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 12,
   },
+  subtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 4,
+  },
   headerSpacer: {
     width: 40,
   },
+
+  // Card Styles
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -66,40 +74,127 @@ export const analyticsStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#0F131A',
-    marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 14,
     color: '#64748B',
     marginBottom: 16,
   },
-  chartPlaceholder: {
+
+  // Chart Styles
+  chartContainer: {
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
+    padding: 16,
     minHeight: 200,
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    borderStyle: 'dashed',
   },
-  placeholderText: {
-    fontSize: 16,
+  chartWrapper: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  chartTitle: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#64748B',
     marginBottom: 8,
-  },
-  placeholderNote: {
-    fontSize: 12,
-    color: '#94A3B8',
     textAlign: 'center',
-    fontFamily: 'monospace',
   },
+
+  // Time Range Selector
+  timeRangeButton: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  timeRangeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+
+  // Quick Stats
+  quickStats: {
+    marginTop: 12,
+  },
+  quickStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  colorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  quickStatText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+
+  // Frequency List
+  frequencyList: {
+    marginTop: 12,
+  },
+  frequencyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  frequencyRank: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  rankText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#3B82F6',
+  },
+  frequencyInfo: {
+    flex: 1,
+  },
+  frequencySymptom: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F131A',
+    marginBottom: 2,
+  },
+  frequencyCount: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  frequencyPercentage: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  percentageText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+
+  // Stats Grid
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -120,6 +215,55 @@ export const analyticsStyles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
   },
+
+  // Empty States
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+    opacity: 0.5,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Error States
+  errorCard: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  retryButton: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Info Card
   infoCard: {
     backgroundColor: '#EFF6FF',
     borderColor: '#3B82F6',
@@ -133,6 +277,13 @@ export const analyticsStyles = StyleSheet.create({
   infoNote: {
     fontSize: 12,
     color: '#64748B',
-    fontFamily: 'monospace',
+    lineHeight: 18,
+  },
+
+  // Loading
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
   },
 });
