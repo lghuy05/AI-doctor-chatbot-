@@ -119,7 +119,10 @@ export const usePatientStore = create<PatientStore>()(
           if (response.data.success && response.data.profile) {
             // ✅ APPLY DEDUPLICATION TO BOTH MEDICATIONS AND CONDITIONS
             const profile = response.data.profile;
-
+            // ADD VALIDATION
+            if (!profile.name || profile.name === 'Unknown Patient') {
+              throw new Error('Invalid patient data received');
+            }
             let processedProfile = { ...profile };
 
             // Deduplicate medications if they exist
@@ -148,6 +151,7 @@ export const usePatientStore = create<PatientStore>()(
             console.log(`🩺 Conditions: ${processedProfile.medical_conditions?.length || 0}`);
 
           } else {
+            const errorMsg = response.data.error || 'Failed to load patient profile';
             set({
               error: response.data.error || 'Failed to load patient profile',
               isLoading: false,
@@ -156,9 +160,13 @@ export const usePatientStore = create<PatientStore>()(
           }
         } catch (error: any) {
           console.error('❌ Error fetching patient profile:', error);
+          const errorMessage = error.response?.data?.error ||
+            error.message ||
+            'Network error';
           set({
-            error: error.response?.data?.error || error.message || 'Network error',
+            error: errorMessage,
             isLoading: false,
+            patientProfile: null, // Clear invalid profile
           });
         }
       },

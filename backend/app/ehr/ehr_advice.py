@@ -8,6 +8,8 @@ from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
 from app.services.symptom_tracking_service import SymptomTrackingService
 from app.services.rag_service import get_medical_context
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 router = APIRouter()
 
@@ -18,8 +20,12 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
     triage = triage_rules(inp.symptoms)
     if triage.risk == "emergency":
         raise HTTPException(400, "Possible emergency. Call emergency services now.")
-
-    medical_context = get_medical_context(inp.symptoms)
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        medical_context = await loop.run_in_executor(
+            executor, get_medical_context, inp.symptoms
+        )
+    # medical_context = get_medical_context(inp.symptoms)
 
     # 2. Get EHR data for LLM context
     ehr_context = {

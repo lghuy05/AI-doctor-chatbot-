@@ -11,17 +11,33 @@ def get_patient_profile(patient_id: str):
     """Get comprehensive patient profile from FHIR"""
     try:
         print(f"🔍 Fetching profile for patient: {patient_id}")
+
+        # Add validation for patient_id
+        if not patient_id or patient_id.strip() == "":
+            return ProfileResponse(success=False, error="Patient ID is required")
+
         profile_data = FHIRService.get_patient_profile(patient_id)
 
         if not profile_data:
+            print(f"❌ No profile data returned for patient: {patient_id}")
             return ProfileResponse(
-                success=False, error="Patient profile not found in EHR system"
+                success=False, error=f"Patient {patient_id} not found in EHR system"
             )
+
+        # Validate required fields
+        if (
+            not profile_data.get("name")
+            or profile_data.get("name") == "Unknown Patient"
+        ):
+            return ProfileResponse(success=False, error="Patient name not found in EHR")
 
         return ProfileResponse(success=True, profile=profile_data)
 
     except Exception as e:
-        print(f"❌ Error fetching patient profile: {e}")
+        print(f"❌ Detailed error fetching patient profile: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
         return ProfileResponse(
             success=False, error=f"Error fetching patient profile: {str(e)}"
         )
