@@ -112,7 +112,7 @@ if EHR_ENABLED:
 try:
     from app.routes.analytics import router as analytics_router
 
-    app.include_router(analytics.router)
+    app.include_router(analytics_router)
     print("✅ Analytics routes registered")
 except ImportError as e:
     print(f"Analytics routes not available: {e}")
