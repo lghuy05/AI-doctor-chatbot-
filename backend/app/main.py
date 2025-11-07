@@ -1,148 +1,147 @@
-# main.py (updated)
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-import os
-from sqlalchemy import text
-from app.database.database import engine, Base
-from app.routes import triage, advice, referrals, rx_draft, auth, patient_profile
-from dotenv import load_dotenv
+# routes/ehr_advice.py - FIXED VERSION
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from sqlalchemy.orm import Session
+from app.database.database import get_db
+from app.schemas.schemas import SymptomInput, EnhancedAdviceOut, SymptomIntensityCreate
+from app.services.fhir_service import FHIRService
+from app.services.triage_service import triage_rules
+from app.services.llm_service import require_json_with_retry
+from app.services.symptom_tracking_service import SymptomTrackingService
+from app.services.rag_service import get_medical_context
+import asyncio
+import concurrent.futures
 
-load_dotenv()
-
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as e:
-    print(f"❌ Error creating tables: {e}")
-
-app = FastAPI(title="AI Doctor Backend (OpenRouter)")
-
-# EHR Configuration
-EHR_ENABLED = True
-FHIR_BASE_URL = os.getenv("FHIR_BASE_URL", "https://hapi.fhir.org/baseR4")
-
-print(f" EHR Integration: {'ENABLED' if EHR_ENABLED else 'DISABLED'}")
-print(f" FHIR Server: {FHIR_BASE_URL}")
-
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+router = APIRouter()
 
 
-@app.middleware("http")
-async def authenticate_request(request: Request, call_next):
-    if request.method == "OPTIONS":
-        return await call_next(request)
-    # Skip auth for these public endpoints
-    public_paths = [
-        "/auth/login",
-        "/auth/register",
-        "/",
-        "/health",
-        "/docs",
-        "/redoc",
-        "/openapi.json",
-        "/favicon.ico",
-        "/patient/discover",
-        "/patient/profile",
-        "/patient/medications",
-        "/ehr-advice",
-        "/triage",
-    ]
-    if request.url.path in public_paths:
-        return await call_next(request)
+# Simple synchronous version - NO AWAIT
+@router.post("/ehr-advice", response_model=EnhancedAdviceOut)
+def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
+    # 1. Triage first (safety check) - FAST
+    triage = triage_rules(inp.symptoms)
+    if triage.risk == "emergency":
+        raise HTTPException(400, "Possible emergency. Call emergency services now.")
 
-    # Check for Authorization header
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid token")
+    # 2. Get medical context (synchronous)
+    medical_context = get_medical_context(inp.symptoms)
 
-    token = auth_header.replace("Bearer ", "")
-
-    # TODO: Implement your actual token verification logic
-    if not token:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    print(f"🔐 Auth: Token received for {request.url.path}")
-
-    response = await call_next(request)
-    return response
-
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    print(">>", request.method, request.url.path)
-    try:
-        resp = await call_next(request)
-        print("<<", resp.status_code, request.url.path)
-        return resp
-    except Exception as e:
-        print("!!", request.url.path, repr(e))
-        raise
-
-
-# Include base routers
-app.include_router(auth.router)
-app.include_router(triage.router)
-app.include_router(advice.router)
-app.include_router(referrals.router)
-app.include_router(rx_draft.router)
-
-# Conditionally include EHR routers
-if EHR_ENABLED:
-    try:
-        from app.routes.patient_profile import router as patient_profile_router
-        from app.ehr.ehr_advice import router as ehr_advice_router
-
-        app.include_router(ehr_advice_router)
-        app.include_router(patient_profile_router)
-        print("✅ EHR routes registered: /ehr-advice, /patient/profile")
-    except ImportError as e:
-        print(f"Failed to import EHR: {e}")
-
-
-@app.get("/")
-async def root():
-    ehr_status = "enabled" if EHR_ENABLED else "disabled"
-    return {
-        "message": "AI Doctor Chatbot API is running!",
-        "status": "healthy",
-        "ehr_integration": ehr_status,
-        "fhir_server": FHIR_BASE_URL if EHR_ENABLED else "none",
+    # 3. Get EHR data for LLM context
+    ehr_context = {
+        "ehr_medications": inp.meds,
+        "ehr_conditions": inp.conditions,
+        "ehr_age": inp.age,
+        "ehr_gender": inp.sex,
     }
+    print(
+        f"📋 Using patient-provided data: {len(inp.meds)} meds, {len(inp.conditions)} conditions"
+    )
 
-
-@app.get("/health")
-async def health():
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(text("SELECT 1"))
-            db_test = result.scalar()
-
-        health_info = {
-            "status": "healthy",
-            "database": "connected",
-            "service": "AI Doctor Chatbot API",
-            "database_test": db_test,
-            "ehr_integration": "enabled" if EHR_ENABLED else "disabled",
-        }
-
-        if EHR_ENABLED:
-            health_info["fhir_server"] = FHIR_BASE_URL
-
-        return health_info
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "status": "unhealthy",
-                "database": "disconnected",
-                "ehr_integration": "enabled" if EHR_ENABLED else "disabled",
-                "error": str(e),
-            },
+    def build_messages():
+        system = (
+            "You are a clinical decision support assistant. "
+            "Consider the patient's existing conditions and medications from their EHR if available. "
+            "Also consider the provided medical research context from PubMed when giving advice. "
+            "NEVER diagnose. NEVER provide medication names/doses to patients. "
+            "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
+            "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty',... to determine intensity (1-10). "
+            "Estimate duration in minutes based on time-related words like 'today','the morning','hours', 'days', 'weeks', 'constant', 'intermittent'. "
+            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, symptom_analysis. "
+            "symptom_analysis should contain: intensities[] (each with symptom_name, intensity 1-10, duration_minutes, notes), and overall_severity (1-10)."
+            "Example JSON format: "
+            '{"advice":[{"step":"Hydration","details":"Small sips of water."}],'
+            '"when_to_seek_care":["Trouble breathing"],'
+            '"disclaimer":"This is not a diagnosis.",'
+            '"symptom_analysis":{'
+            '"intensities":['
+            '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain"},'
+            '{"symptom_name":"nausea","intensity":4,"duration_minutes":45,"notes":"Intermittent"}'
+            "],"
+            '"overall_severity":6}}'
         )
+
+        ehr_text = ""
+        if ehr_context and (
+            ehr_context.get("ehr_medications") or ehr_context.get("ehr_conditions")
+        ):
+            ehr_text = (
+                f"EHR MEDICAL HISTORY:\n"
+                f"Current Medications: {', '.join(ehr_context.get('ehr_medications', []))}\n"
+                f"Existing Conditions: {', '.join(ehr_context.get('ehr_conditions', []))}\n"
+                f"EHR Age: {ehr_context.get('ehr_age', 'Not specified')}\n"
+                f"EHR Gender: {ehr_context.get('ehr_gender', 'Not specified')}\n\n"
+            )
+        else:
+            ehr_text = "No EHR data available for this patient.\n\n"
+
+        research_text = ""
+        if (
+            medical_context
+            and "articles" in medical_context
+            and medical_context["articles"]
+        ):
+            research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
+            for i, article in enumerate(
+                medical_context["articles"][:3], 1
+            ):  # Reduced to 3 articles for speed
+                research_text += (
+                    f"{i}. {article['title']} ({article['year']}) - "
+                    f"Relevance: {article.get('relevance_score', 0):.2f}\n"
+                    f"Key findings: {article['content'][:150]}...\n\n"  # Reduced content length
+                )
+        else:
+            research_text = (
+                "No recent medical research text available for these symptoms."
+            )
+
+        user = (
+            f"{ehr_text}"
+            f"{research_text}"
+            f"PATIENT-REPORTED INFORMATION:\n"
+            f"Age: {inp.age}\n"
+            f"Gender: {inp.sex}\n"
+            f"Symptoms: {inp.symptoms}\n"
+            f"Duration: {inp.duration}\n"
+            f"Patient-Reported Meds: {inp.meds}\n"
+            f"Patient-Reported Conditions: {inp.conditions}\n\n"
+            f"Provide personalized advice considering their complete medical history.\n"
+            f"JSON Schema:\n"
+            + '{"advice":[{"step":"Hydration","details":"Small sips of water."}],"when_to_seek_care":["Trouble breathing"],"disclaimer":"This is not a diagnosis."}'
+        )
+
+        return [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
+
+    print("🤖 Generating advice with EHR context...")
+    response = require_json_with_retry(build_messages)
+
+    # 3. Store symptom intensity data in database (synchronous)
+    if "symptom_analysis" in response and response["symptom_analysis"]:
+        symptom_analysis = response["symptom_analysis"]
+
+        # Convert patient_id to integer user_id
+        user_id = (
+            int(inp.patient_id) if inp.patient_id and inp.patient_id.isdigit() else 1
+        )
+
+        # Store each symptom intensity
+        for intensity_data in symptom_analysis.get("intensities", []):
+            tracking_data = SymptomIntensityCreate(
+                user_id=user_id,
+                symptom_name=intensity_data["symptom_name"],
+                intensity=intensity_data["intensity"],
+                duration_minutes=intensity_data.get("duration_minutes", 0),
+                notes=intensity_data.get("notes", "AI-analyzed from chat session"),
+            )
+            success = SymptomTrackingService.record_symptom_intensity(db, tracking_data)
+            if success:
+                print(
+                    f"✅ Stored: {intensity_data['symptom_name']} (intensity: {intensity_data['intensity']}/10)"
+                )
+
+        print(
+            f"📊 Recorded {len(symptom_analysis.get('intensities', []))} symptom intensities"
+        )
+
+    return response
