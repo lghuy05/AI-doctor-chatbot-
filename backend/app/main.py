@@ -54,6 +54,7 @@ async def authenticate_request(request: Request, call_next):
         "/patient/medications",
         "/ehr-advice",
         "/triage",
+        "/analytics",
     ]
 
     # Check if path starts with any public path
@@ -100,7 +101,7 @@ app.include_router(rx_draft.router)
 if EHR_ENABLED:
     try:
         from app.routes.patient_profile import router as patient_profile_router
-        from app.routes.ehr_advice import router as ehr_advice_router
+        from app.ehr.ehr_advice import router as ehr_advice_router
 
         app.include_router(ehr_advice_router)
         app.include_router(patient_profile_router)

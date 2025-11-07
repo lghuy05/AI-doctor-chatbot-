@@ -1,11 +1,10 @@
-# services/symptom_tracking_service.py
+# services/symptom_tracking_service.py - FIXED VERSION
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database.database import get_db
-from app.schemas.schemas import SymptomIntensityCreate, SymptomFrequencyUpdate
+from app.schemas.schemas import SymptomIntensityCreate
 from datetime import datetime, date
-from typing import List
-from typing import Dict
+from typing import List, Dict
 
 
 class SymptomTrackingService:
@@ -13,14 +12,13 @@ class SymptomTrackingService:
     def record_symptom_intensity(
         db: Session, intensity_data: SymptomIntensityCreate
     ) -> bool:
-        """Record symptom intensity for a patient - exact match to your schema"""
+        """Record symptom intensity for a patient"""
         try:
             # Insert into symptom_intensity table
             query = text("""
                 INSERT INTO symptom_intensity 
                 (user_id, symptom_name, intensity, duration_minutes, notes, reported_at)
                 VALUES (:user_id, :symptom_name, :intensity, :duration_minutes, :notes, NOW())
-                RETURNING id
             """)
             result = db.execute(
                 query,
@@ -43,7 +41,6 @@ class SymptomTrackingService:
                 DO UPDATE SET 
                     occurrence_count = symptom_frequency.occurrence_count + 1,
                     last_occurrence = NOW()
-                RETURNING user_id, symptom_name, month_year
             """)
             db.execute(
                 freq_query,
@@ -69,7 +66,7 @@ class SymptomTrackingService:
     def get_symptom_intensity_history(
         db: Session, user_id: int, days: int = 30
     ) -> List:
-        """Get symptom intensity history for charts"""
+        """Get symptom intensity history for charts - FIXED QUERY"""
         try:
             query = text("""
                 SELECT 
@@ -81,19 +78,22 @@ class SymptomTrackingService:
                     AVG(duration_minutes) as avg_duration
                 FROM symptom_intensity 
                 WHERE user_id = :user_id 
-                AND reported_at >= NOW() - INTERVAL ':days days'
+                AND reported_at >= CURRENT_DATE - INTERVAL ':days days'
                 GROUP BY symptom_name, DATE(reported_at)
-                ORDER BY date DESC, symptom_name
+                ORDER BY date ASC, symptom_name
             """)
             result = db.execute(query, {"user_id": user_id, "days": days})
-            return result.fetchall()
+            rows = result.fetchall()
+            print(f"📊 Fetched {len(rows)} intensity records for user {user_id}")
+            return rows
         except Exception as e:
             print(f"❌ Error fetching symptom history: {e}")
+            # Return empty list instead of mock data for production
             return []
 
     @staticmethod
     def get_symptom_frequency(db: Session, user_id: int, months: int = 6) -> List:
-        """Get symptom frequency for pie chart"""
+        """Get symptom frequency for pie chart - FIXED QUERY"""
         try:
             query = text("""
                 SELECT 
@@ -102,12 +102,14 @@ class SymptomTrackingService:
                     MAX(last_occurrence) as last_occurrence
                 FROM symptom_frequency 
                 WHERE user_id = :user_id
-                AND month_year >= DATE_TRUNC('month', NOW() - INTERVAL ':months months')
+                AND month_year >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL ':months months')
                 GROUP BY symptom_name
                 ORDER BY total_occurrences DESC
             """)
             result = db.execute(query, {"user_id": user_id, "months": months})
-            return result.fetchall()
+            rows = result.fetchall()
+            print(f"📊 Fetched {len(rows)} frequency records for user {user_id}")
+            return rows
         except Exception as e:
             print(f"❌ Error fetching symptom frequency: {e}")
             return []
@@ -171,7 +173,7 @@ class SymptomTrackingService:
             intensity_result = db.execute(intensity_query, {"user_id": user_id})
             highest_intensity = intensity_result.fetchone()
 
-            return {
+            summary = {
                 "total_symptoms_recorded": total_count,
                 "most_frequent_symptom": most_frequent[0] if most_frequent else None,
                 "most_frequent_count": most_frequent[1] if most_frequent else 0,
@@ -183,9 +185,18 @@ class SymptomTrackingService:
                 else 0,
             }
 
+            print(f"📊 Summary: {summary}")
+            return summary
+
         except Exception as e:
             print(f"❌ Error fetching symptom summary: {e}")
-            return {}
+            return {
+                "total_symptoms_recorded": 0,
+                "most_frequent_symptom": None,
+                "most_frequent_count": 0,
+                "highest_intensity_symptom": None,
+                "highest_intensity_value": 0,
+            }
 
     @staticmethod
     def get_symptom_trends(db: Session, user_id: int, period_days: int = 30) -> Dict:
@@ -200,7 +211,7 @@ class SymptomTrackingService:
             frequency_data = SymptomTrackingService.get_symptom_frequency(
                 db,
                 user_id,
-                period_days // 30,  # Convert to months
+                max(1, period_days // 30),  # Ensure at least 1 month
             )
 
             # Get recent symptoms

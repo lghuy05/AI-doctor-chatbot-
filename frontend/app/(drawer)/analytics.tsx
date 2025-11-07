@@ -1,10 +1,12 @@
-// app/(drawer)/analytics.tsx - COMPLETE WITH REAL CHARTS
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+// app/(drawer)/analytics.tsx - COMPLETE WITH GIFTED CHARTS
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { analyticsStyles } from '../styles/analyticsStyles';
 import { useState, useEffect } from 'react';
 import { useAnalyticsStore } from '../../hooks/useAnalyticsStore';
-import { BarChart, PieChart } from 'react-native-gifted-charts';
+import { PieChart, LineChart, BarChart } from 'react-native-gifted-charts';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function AnalyticsScreen() {
   const navigation = useNavigation();
@@ -38,57 +40,65 @@ export default function AnalyticsScreen() {
     setRefreshing(false);
   };
 
-  // Transform data for Bar Chart
+  // Transform data for Bar Chart (Symptom Intensity)
   const getBarChartData = () => {
     if (!data.symptomIntensity.dates.length) return [];
 
-    // Get average intensity per symptom for the period
     return Object.values(data.symptomIntensity.symptoms).map(symptom => {
       const avgIntensity = symptom.data.length > 0
         ? symptom.data.reduce((sum, point) => sum + point.intensity, 0) / symptom.data.length
         : 0;
 
       return {
-        value: Math.round(avgIntensity * 10) / 10, // Round to 1 decimal
-        label: symptom.name.substring(0, 8), // Shorten long names
+        value: Math.round(avgIntensity * 10) / 10,
+        label: symptom.name.substring(0, 6), // Shorten long names
         frontColor: symptom.color,
-        spacing: 8,
-        labelWidth: 40,
-        labelTextStyle: { color: '#64748B', fontSize: 10 },
+        topLabelComponent: () => (
+          <Text style={{ color: symptom.color, fontSize: 12, marginBottom: 2 }}>
+            {Math.round(avgIntensity * 10) / 10}
+          </Text>
+        ),
       };
     });
   };
 
-  // Transform data for Pie Chart
+  // Transform data for Pie Chart (Symptom Frequency)
   const getPieChartData = () => {
     if (!data.symptomFrequency.length) return [];
 
-    return data.symptomFrequency.slice(0, 6).map(item => ({
+    return data.symptomFrequency.slice(0, 5).map(item => ({
       value: item.frequency,
       color: item.color,
       text: `${item.percentage.toFixed(0)}%`,
-      textColor: '#FFFFFF',
-      textBackgroundColor: 'rgba(0,0,0,0.3)',
-      font: { fontWeight: 'bold' },
+      textColor: 'white',
+      fontWeight: 'bold',
     }));
   };
 
-  // Multi-line chart data for symptom trends over time
+  // Transform data for Line Chart (Symptom Trends Over Time)
   const getLineChartData = () => {
     if (!data.symptomIntensity.dates.length) return [];
 
-    // Get last 7 days of data for the line chart
+    // Get the 3 most frequent symptoms for the line chart
+    const topSymptoms = Object.values(data.symptomIntensity.symptoms)
+      .slice(0, 3);
+
+    if (topSymptoms.length === 0) return [];
+
+    // Create data points for each symptom over the last 7 days
     const recentDates = data.symptomIntensity.dates.slice(-7);
 
-    const lineData = recentDates.map(date => {
-      const dataPoint: any = { value: 0, dataPointText: '', label: new Date(date).getDate().toString() };
+    const lineData = recentDates.map((date, index) => {
+      const dataPoint: any = {
+        value: 0,
+        label: new Date(date).getDate().toString(),
+        labelTextStyle: { color: '#64748B', fontSize: 10 },
+      };
 
-      // Add data for each symptom
-      Object.values(data.symptomIntensity.symptoms).forEach(symptom => {
+      // Add data for each top symptom
+      topSymptoms.forEach((symptom, symptomIndex) => {
         const point = symptom.data.find(p => p.date === date);
-        if (point) {
-          dataPoint[symptom.name] = point.intensity;
-        }
+        dataPoint[`value${symptomIndex + 1}`] = point ? point.intensity : 0;
       });
 
       return dataPoint;
@@ -96,6 +106,11 @@ export default function AnalyticsScreen() {
 
     return lineData;
   };
+
+  const barData = getBarChartData();
+  const pieData = getPieChartData();
+  const lineData = getLineChartData();
+  const topSymptoms = Object.values(data.symptomIntensity.symptoms).slice(0, 3);
 
   if (isLoading && !data.lastUpdated) {
     return (
@@ -115,10 +130,6 @@ export default function AnalyticsScreen() {
       </View>
     );
   }
-
-  const barData = getBarChartData();
-  const pieData = getPieChartData();
-  const lineData = getLineChartData();
 
   return (
     <ScrollView
@@ -178,8 +189,8 @@ export default function AnalyticsScreen() {
           <View style={analyticsStyles.chartContainer}>
             <BarChart
               data={barData}
-              barWidth={28}
-              spacing={24}
+              barWidth={35}
+              spacing={25}
               roundedTop
               roundedBottom
               hideRules
@@ -188,9 +199,12 @@ export default function AnalyticsScreen() {
               yAxisTextStyle={{ color: '#64748B', fontSize: 10 }}
               noOfSections={5}
               maxValue={10}
-              height={160}
+              height={200}
               showFractionalValues
-              formatYLabel={(value) => Math.round(value).toString()}
+              frontColor="lightgray"
+              gradientColor="#3B82F6"
+              // @ts-ignore - gifted charts types might not be perfect
+              formatYLabel={(value: string) => Math.round(parseFloat(value)).toString()}
             />
 
             {/* Legend */}
@@ -216,6 +230,54 @@ export default function AnalyticsScreen() {
         )}
       </View>
 
+      {/* Symptom Trends Line Chart */}
+      {lineData.length > 0 && topSymptoms.length > 0 && (
+        <View style={analyticsStyles.card}>
+          <Text style={analyticsStyles.cardTitle}>Symptom Trends</Text>
+          <Text style={analyticsStyles.cardSubtitle}>
+            How your top symptoms have changed over time
+          </Text>
+
+          <View style={analyticsStyles.chartContainer}>
+            <LineChart
+              data={lineData}
+              height={200}
+              spacing={40}
+              initialSpacing={10}
+              color1="#3B82F6"
+              color2="#EF4444"
+              color3="#10B981"
+              thickness={3}
+              hideRules
+              xAxisColor="lightgray"
+              yAxisColor="lightgray"
+              yAxisTextStyle={{ color: '#64748B', fontSize: 10 }}
+              xAxisLabelTextStyle={{ color: '#64748B', fontSize: 10 }}
+              dataPointsColor1="#3B82F6"
+              dataPointsColor2="#EF4444"
+              dataPointsColor3="#10B981"
+              dataPointsRadius={4}
+              curved
+            />
+
+            {/* Line Chart Legend */}
+            <View style={analyticsStyles.quickStats}>
+              {topSymptoms.map((symptom, index) => {
+                const colors = ['#3B82F6', '#EF4444', '#10B981'];
+                return (
+                  <View key={symptom.name} style={analyticsStyles.quickStat}>
+                    <View style={[analyticsStyles.colorDot, { backgroundColor: colors[index] }]} />
+                    <Text style={analyticsStyles.quickStatText}>
+                      {symptom.name}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Symptom Frequency Pie Chart */}
       <View style={analyticsStyles.card}>
         <View style={analyticsStyles.cardHeader}>
@@ -239,16 +301,19 @@ export default function AnalyticsScreen() {
 
         {pieData.length > 0 ? (
           <View style={analyticsStyles.chartContainer}>
-            <View style={analyticsStyles.chartWrapper}>
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
               <PieChart
                 data={pieData}
+                donut
                 showText
-                textColor="white"
-                radius={80}
-                textSize={12}
-                fontWeight="bold"
-                showValuesAsLabels
-                labelsPosition="outward"
+                textColor="black"
+                radius={90}
+                textSize={14}
+                showTextBackground
+                textBackgroundRadius={20}
+                textBackgroundColor="rgba(255,255,255,0.7)"
+                focusOnPress
+                sectionAutoFocus
               />
             </View>
 
