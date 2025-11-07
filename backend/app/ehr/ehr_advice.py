@@ -1,5 +1,5 @@
-# routes/ehr_advice.py - UPDATED WITH CLEAN SCHEMAS
-from fastapi import APIRouter, HTTPException, Depends
+# routes/ehr_advice.py - FIXED VERSION
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.schemas.schemas import SymptomInput, EnhancedAdviceOut, SymptomIntensityCreate
@@ -8,8 +8,6 @@ from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
 from app.services.symptom_tracking_service import SymptomTrackingService
 from app.services.rag_service import get_medical_context
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 router = APIRouter()
 
@@ -20,14 +18,11 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
     triage = triage_rules(inp.symptoms)
     if triage.risk == "emergency":
         raise HTTPException(400, "Possible emergency. Call emergency services now.")
-    loop = asyncio.get_event_loop()
-    with ThreadPoolExecutor() as executor:
-        medical_context = await loop.run_in_executor(
-            executor, get_medical_context, inp.symptoms
-        )
-    # medical_context = get_medical_context(inp.symptoms)
 
-    # 2. Get EHR data for LLM context
+    # 2. Get medical context (synchronous - no await needed)
+    medical_context = get_medical_context(inp.symptoms)
+
+    # 3. Get EHR data for LLM context
     ehr_context = {
         "ehr_medications": inp.meds,
         "ehr_conditions": inp.conditions,
@@ -39,7 +34,6 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
     )
 
     def build_messages():
-        # Your existing working prompt...
         system = (
             "You are a clinical decision support assistant. "
             "Consider the patient's existing conditions and medications from their EHR if available. "
@@ -62,7 +56,6 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
             '"overall_severity":6}}'
         )
 
-        # ... rest of your message building code
         ehr_text = ""
         if ehr_context and (
             ehr_context.get("ehr_medications") or ehr_context.get("ehr_conditions")
@@ -84,11 +77,13 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
             and medical_context["articles"]
         ):
             research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
-            for i, article in enumerate(medical_context["articles"][:5], 1):
+            for i, article in enumerate(
+                medical_context["articles"][:3], 1
+            ):  # Reduced to 3 for speed
                 research_text += (
                     f"{i}. {article['title']} ({article['year']}) - "
-                    f"Relevance: {article['relevance_score']:.2f}\n"
-                    f"Key findings: {article['content'][:200]}...\n\n"
+                    f"Relevance: {article.get('relevance_score', 0):.2f}\n"
+                    f"Key findings: {article['content'][:150]}...\n\n"
                 )
         else:
             research_text = (
@@ -118,11 +113,11 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
     print("🤖 Generating advice with EHR context...")
     response = require_json_with_retry(build_messages)
 
-    # 3. Store symptom intensity data in database
+    # 4. Store symptom intensity data in database
     if "symptom_analysis" in response and response["symptom_analysis"]:
         symptom_analysis = response["symptom_analysis"]
 
-        # Convert patient_id to integer user_id (you might need to adjust this logic)
+        # Convert patient_id to integer user_id
         user_id = (
             int(inp.patient_id) if inp.patient_id and inp.patient_id.isdigit() else 1
         )
