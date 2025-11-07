@@ -5,6 +5,7 @@ from app.database.database import get_db
 from app.schemas.schemas import SymptomIntensityCreate, SymptomFrequencyUpdate
 from datetime import datetime, date
 from typing import List
+from typing import Dict
 
 
 class SymptomTrackingService:
