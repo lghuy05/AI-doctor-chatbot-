@@ -59,7 +59,7 @@ export default function DashboardScreen() {
 
         <TouchableOpacity
           style={dashboardStyles.navCard}
-          onPress={() => router.push('/patient/profile')}
+          onPress={() => router.push('/(drawer)/profile')}
         >
           <View style={dashboardStyles.navIcon}>
             <Text style={dashboardStyles.navIconText}>👤</Text>
