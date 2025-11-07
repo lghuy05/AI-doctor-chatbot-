@@ -1,12 +1,12 @@
-# main.py (updated)
+# app/main.py - FIXED VERSION
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from sqlalchemy import text
 from app.database.database import engine, Base
 from app.routes import triage, advice, referrals, rx_draft, auth, patient_profile
-from dotenv import load_dotenv
 from app.services.auth_service import verify_token
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -38,6 +38,7 @@ app.add_middleware(
 async def authenticate_request(request: Request, call_next):
     if request.method == "OPTIONS":
         return await call_next(request)
+
     # Skip auth for these public endpoints
     public_paths = [
         "/auth/login",
@@ -54,7 +55,9 @@ async def authenticate_request(request: Request, call_next):
         "/ehr-advice",
         "/triage",
     ]
-    if request.url.path in public_paths:
+
+    # Check if path starts with any public path
+    if any(request.url.path.startswith(path) for path in public_paths):
         return await call_next(request)
 
     # Check for Authorization header
@@ -64,11 +67,11 @@ async def authenticate_request(request: Request, call_next):
 
     token = auth_header.replace("Bearer ", "")
     payload = verify_token(token)
-    # TODO: Implement your actual token verification logic
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
-    print(f"🔐 Auth: Token received for {request.url.path}")
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    print(f"🔐 Auth: Valid token for user {payload.get('sub')} - {request.url.path}")
 
     response = await call_next(request)
     return response
@@ -97,13 +100,22 @@ app.include_router(rx_draft.router)
 if EHR_ENABLED:
     try:
         from app.routes.patient_profile import router as patient_profile_router
-        from app.ehr.ehr_advice import router as ehr_advice_router
+        from app.routes.ehr_advice import router as ehr_advice_router
 
         app.include_router(ehr_advice_router)
         app.include_router(patient_profile_router)
         print("✅ EHR routes registered: /ehr-advice, /patient/profile")
     except ImportError as e:
         print(f"Failed to import EHR: {e}")
+
+# Add analytics routes
+try:
+    from app.routes.analytics import router as analytics_router
+
+    app.include_router(analytics.router)
+    print("✅ Analytics routes registered")
+except ImportError as e:
+    print(f"Analytics routes not available: {e}")
 
 
 @app.get("/")

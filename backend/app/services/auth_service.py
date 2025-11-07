@@ -1,14 +1,17 @@
+# app/services/auth_service.py - FIXED VERSION
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
-from sqlalchemy.orm import Session
+from app.database.database import get_db
 
 load_dotenv()
+
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY environment variable is required")
@@ -17,6 +20,7 @@ ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -38,28 +42,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-def authenticate_user(db, username: str, password: str):
-    from app.database.models import User
-
-    user = (
-        db.query(User)
-        .filter((User.username == username) | (User.email == username))
-        .first()
-    )
-    if not user:
-        print(f"❌ User not found with username/email: {username}")
-        return False
-    if not verify_password(password, user.hashed_password):
-        print(f"❌ Password incorrect for user: {user.username}")
-        return False
-    print(f"✅ Authentication successful for user: {user.username}")
-    return user
-
-
 def verify_token(token: str) -> dict:
     """Verify JWT token and return payload"""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithm=ALGORITHM)
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError as e:
         print(f"❌ Token verification failed: {e}")
@@ -89,4 +75,22 @@ def get_current_user(
     if user is None:
         raise credentials_exception
 
+    return user
+
+
+def authenticate_user(db, username: str, password: str):
+    from app.database.models import User
+
+    user = (
+        db.query(User)
+        .filter((User.username == username) | (User.email == username))
+        .first()
+    )
+    if not user:
+        print(f"❌ User not found with username/email: {username}")
+        return False
+    if not verify_password(password, user.hashed_password):
+        print(f"❌ Password incorrect for user: {user.username}")
+        return False
+    print(f"✅ Authentication successful for user: {user.username}")
     return user
