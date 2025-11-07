@@ -49,6 +49,7 @@ async def authenticate_request(request: Request, call_next):
         "/favicon.ico",
         "/patient/discover",
         "/patient/profile",
+        "/patient/medications",
         "/ehr-advice",
         "/triage",
     ]

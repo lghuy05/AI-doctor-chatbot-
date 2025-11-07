@@ -1,4 +1,4 @@
-// app/(drawer)/_layout.tsx
+// app/(drawer)/_layout.tsx - FIXED VERSION
 import { Drawer } from 'expo-router/drawer';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { router, usePathname } from 'expo-router';
@@ -95,6 +95,13 @@ export default function DrawerLayout() {
         options={{
           drawerLabel: 'Reminders',
           title: 'Reminders',
+        }}
+      />
+      <Drawer.Screen
+        name="profile"
+        options={{
+          drawerLabel: 'Profile',
+          title: 'Profile',
         }}
       />
     </Drawer>
