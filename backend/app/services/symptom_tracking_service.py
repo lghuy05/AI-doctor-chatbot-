@@ -1,4 +1,4 @@
-# services/symptom_tracking_service.py - FIXED VERSION
+# services/symptom_tracking_service.py - FIXED SQL QUERY VERSION
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database.database import get_db
@@ -66,12 +66,12 @@ class SymptomTrackingService:
     def get_symptom_intensity_history(
         db: Session, user_id: int, days: int = 30
     ) -> List:
-        """Get symptom intensity history for charts - FIXED QUERY"""
+        """Get symptom intensity history for charts - FIXED SQL QUERY"""
         try:
+            # FIXED: Removed individual intensity from SELECT since we're using AVG
             query = text("""
                 SELECT 
                     symptom_name,
-                    intensity,
                     DATE(reported_at) as date,
                     AVG(intensity) as daily_avg_intensity,
                     COUNT(*) as daily_occurrences,

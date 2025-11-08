@@ -1,4 +1,4 @@
-# routes/analytics.py - SIMPLE WORKING VERSION
+# routes/analytics.py - UPDATED FOR FIXED SQL
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.database import get_db
@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/analytics/symptom-intensity")
 def get_symptom_intensity(days: int = 30, db: Session = Depends(get_db)):
-    """Get symptom intensity data - SIMPLE VERSION"""
+    """Get symptom intensity data - UPDATED FOR FIXED SQL"""
     try:
         user_id = 1
 
@@ -43,19 +43,14 @@ def get_symptom_intensity(days: int = 30, db: Session = Depends(get_db)):
             if symptom_name not in symptoms_data:
                 symptoms_data[symptom_name] = {"name": symptom_name, "data": []}
 
-            intensity_value = (
-                float(record.daily_avg_intensity)
-                if record.daily_avg_intensity
-                else float(record.intensity)
-            )
+            # FIXED: Use daily_avg_intensity only (individual intensity is no longer in SELECT)
+            intensity_value = float(record.daily_avg_intensity) if record.daily_avg_intensity is not None else 0
 
             symptoms_data[symptom_name]["data"].append(
                 {
                     "date": date_str,
                     "intensity": intensity_value,
-                    "occurrences": int(record.daily_occurrences)
-                    if record.daily_occurrences
-                    else 1,
+                    "occurrences": int(record.daily_occurrences) if record.daily_occurrences else 1,
                 }
             )
 
@@ -89,6 +84,7 @@ def get_symptom_intensity(days: int = 30, db: Session = Depends(get_db)):
         }
 
     except Exception as e:
+        print(f"❌ Error in symptom intensity endpoint: {str(e)}")
         return {
             "success": False,
             "error": str(e),
@@ -133,4 +129,4 @@ def get_symptom_summary(db: Session = Depends(get_db)):
         summary = SymptomTrackingService.get_symptom_summary(db, user_id)
         return {"success": True, "summary": summary}
     except Exception as e:
-        return {"success": False, "error": str(e), "summary": {}}
+        return {"success": False, "error": str(e), "summary": {}
