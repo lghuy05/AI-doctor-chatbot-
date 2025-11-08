@@ -1,5 +1,5 @@
-// app/(drawer)/analytics.tsx - MULTIPLE SYMPTOMS LINE CHART
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions, LogBox } from 'react-native';
+// app/(drawer)/analytics.tsx - SIMPLIFIED HEALTH SUMMARY VERSION
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, LogBox } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { analyticsStyles } from '../styles/analyticsStyles';
 import { useState, useEffect } from 'react';
@@ -19,9 +19,12 @@ export default function AnalyticsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  // Suppress the specific warning
+  // Suppress warnings
   useEffect(() => {
-    LogBox.ignoreLogs(['onStartShouldSetResponder']);
+    LogBox.ignoreLogs([
+      'onStartShouldSetResponder',
+      'Unknown event handler property'
+    ]);
   }, []);
 
   const toggleDrawer = () => {
@@ -210,9 +213,13 @@ export default function AnalyticsScreen() {
                 strokeLinecap="round"
                 focusEnabled={false}
                 showValuesAsDataPointsText={false}
+                yAxisLabelWidth={40}
+                yAxisLabelPrefix=""
+                yAxisLabelSuffix=""
+                formatYLabel={(value) => `${Math.round(value)}`}
               />
             ) : (
-              // Multiple lines using dataSet
+              // Multiple lines using dataSet - FIXED SYNTAX
               <LineChart
                 dataSet={lineDataSets.map((dataset, index) => ({
                   data: dataset.data,
@@ -242,6 +249,10 @@ export default function AnalyticsScreen() {
                 curvature={0.2}
                 strokeLinecap="round"
                 focusEnabled={false}
+                yAxisLabelWidth={40}
+                yAxisLabelPrefix=""
+                yAxisLabelSuffix=""
+                formatYLabel={(value) => `${Math.round(value)}`}
               />
             )}
 
@@ -321,7 +332,7 @@ export default function AnalyticsScreen() {
               />
             </View>
 
-            {/* Frequency list with last reported time */}
+            {/* Frequency list with last reported time - FIXED COLOR MATCHING */}
             <View style={analyticsStyles.frequencyList}>
               {data.symptomFrequency.slice(0, 5).map((item, index) => {
                 // Format the last occurrence date
@@ -334,8 +345,10 @@ export default function AnalyticsScreen() {
 
                 return (
                   <View key={item.symptom} style={analyticsStyles.frequencyItem}>
-                    <View style={analyticsStyles.frequencyRank}>
-                      <Text style={analyticsStyles.rankText}>#{index + 1}</Text>
+                    <View style={[analyticsStyles.frequencyRank, { backgroundColor: item.color + '20' }]}>
+                      <Text style={[analyticsStyles.rankText, { color: item.color }]}>
+                        #{index + 1}
+                      </Text>
                     </View>
                     <View style={analyticsStyles.frequencyInfo}>
                       <Text style={analyticsStyles.frequencySymptom}>
@@ -348,8 +361,8 @@ export default function AnalyticsScreen() {
                         Last: {lastReported}
                       </Text>
                     </View>
-                    <View style={analyticsStyles.frequencyPercentage}>
-                      <Text style={analyticsStyles.percentageText}>
+                    <View style={[analyticsStyles.frequencyPercentage, { backgroundColor: item.color + '20' }]}>
+                      <Text style={[analyticsStyles.percentageText, { color: item.color }]}>
                         {item.percentage.toFixed(1)}%
                       </Text>
                     </View>
@@ -369,35 +382,37 @@ export default function AnalyticsScreen() {
         )}
       </View>
 
-      {/* Summary Stats */}
+      {/* SIMPLIFIED: Health Summary - Just Total Records */}
       <View style={analyticsStyles.card}>
-        <Text style={analyticsStyles.cardTitle}>Health Summary</Text>
+        <View style={analyticsStyles.cardHeader}>
+          <Text style={analyticsStyles.cardTitle}>Tracking Overview</Text>
+        </View>
 
         <View style={analyticsStyles.statsGrid}>
           <View style={analyticsStyles.statItem}>
             <Text style={analyticsStyles.statNumber}>
-              {data.summary.total_symptoms_recorded}
-            </Text>
-            <Text style={analyticsStyles.statLabel}>Total Records</Text>
-          </View>
-
-          <View style={analyticsStyles.statItem}>
-            <Text style={analyticsStyles.statNumber}>
-              {data.summary.most_frequent_count}
+              {data.summary.total_symptoms_recorded || 0}
             </Text>
             <Text style={analyticsStyles.statLabel}>
-              {data.summary.most_frequent_symptom ?
-                data.summary.most_frequent_symptom.substring(0, 8) : 'Most Frequent'}
+              Total Records
             </Text>
           </View>
 
           <View style={analyticsStyles.statItem}>
             <Text style={analyticsStyles.statNumber}>
-              {data.summary.highest_intensity_value}
+              {data.symptomFrequency.length || 0}
             </Text>
             <Text style={analyticsStyles.statLabel}>
-              {data.summary.highest_intensity_symptom ?
-                data.summary.highest_intensity_symptom.substring(0, 8) : 'Peak Intensity'}
+              Symptoms Tracked
+            </Text>
+          </View>
+
+          <View style={analyticsStyles.statItem}>
+            <Text style={analyticsStyles.statNumber}>
+              {data.lastUpdated ? new Date(data.lastUpdated).getDate() : '0'}
+            </Text>
+            <Text style={analyticsStyles.statLabel}>
+              Active Days
             </Text>
           </View>
         </View>
