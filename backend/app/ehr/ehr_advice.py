@@ -40,18 +40,19 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
             "Also consider the provided medical research context from PubMed when giving advice. "
             "NEVER diagnose. NEVER provide medication names/doses to patients. "
             "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
-            "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty',... to determine intensity (1-10). "
-            "Estimate duration in minutes based on time-related words like 'today','the morning','hours', 'days', 'weeks', 'constant', 'intermittent'. "
+            "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty', 'persistent', 'constant', 'intermittent' to determine intensity (1-10). "
+            "Estimate duration in minutes based on time-related words like 'today','this morning','hours', 'days', 'weeks', 'constant', 'intermittent', 'few', 'several'. "
             "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, symptom_analysis. "
             "symptom_analysis should contain: intensities[] (each with symptom_name, intensity 1-10, duration_minutes, notes), and overall_severity (1-10)."
+            "CRITICAL: The symptom_analysis MUST be generated based on the patient's description, not default values."
             "Example JSON format: "
             '{"advice":[{"step":"Hydration","details":"Small sips of water."}],'
             '"when_to_seek_care":["Trouble breathing"],'
             '"disclaimer":"This is not a diagnosis.",'
             '"symptom_analysis":{'
             '"intensities":['
-            '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain"},'
-            '{"symptom_name":"nausea","intensity":4,"duration_minutes":45,"notes":"Intermittent"}'
+            '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain described as severe"},'
+            '{"symptom_name":"nausea","intensity":4,"duration_minutes":45,"notes":"Intermittent mild nausea"}'
             "],"
             '"overall_severity":6}}'
         )
@@ -100,9 +101,10 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
             f"Duration: {inp.duration}\n"
             f"Patient-Reported Meds: {inp.meds}\n"
             f"Patient-Reported Conditions: {inp.conditions}\n\n"
+            f"ANALYZE SYMPTOM INTENSITY BASED ON THIS DESCRIPTION: {inp.symptoms}\n"
+            f"ANALYZE DURATION BASED ON THIS: {inp.duration}\n\n"
             f"Provide personalized advice considering their complete medical history.\n"
-            f"JSON Schema:\n"
-            + '{"advice":[{"step":"Hydration","details":"Small sips of water."}],"when_to_seek_care":["Trouble breathing"],"disclaimer":"This is not a diagnosis."}'
+            f"IMPORTANT: Generate realistic symptom_analysis based on the actual patient description."
         )
 
         return [
@@ -113,17 +115,33 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
     print("🤖 Generating advice with EHR context...")
     response = require_json_with_retry(build_messages)
 
-    # 4. Store symptom intensity data in database
+    # 4. Store symptom intensity data in database - WITH FALLBACK LOGIC
+    symptom_intensities_to_store = []
+
     if "symptom_analysis" in response and response["symptom_analysis"]:
         symptom_analysis = response["symptom_analysis"]
-
-        # Convert patient_id to integer user_id
-        user_id = (
-            int(inp.patient_id) if inp.patient_id and inp.patient_id.isdigit() else 1
+        symptom_intensities_to_store = symptom_analysis.get("intensities", [])
+        print(
+            f"📊 LLM provided {len(symptom_intensities_to_store)} symptom intensities"
+        )
+    else:
+        # FALLBACK: Create basic symptom analysis if LLM didn't provide it
+        print("⚠️ LLM did not provide symptom_analysis, creating fallback analysis")
+        symptom_intensities_to_store = create_fallback_symptom_analysis(
+            inp.symptoms, inp.duration
         )
 
-        # Store each symptom intensity
-        for intensity_data in symptom_analysis.get("intensities", []):
+    # Store each symptom intensity
+    user_id = int(inp.patient_id) if inp.patient_id and inp.patient_id.isdigit() else 1
+
+    stored_count = 0
+    for intensity_data in symptom_intensities_to_store:
+        # Validate the intensity data
+        if (
+            isinstance(intensity_data, dict)
+            and "symptom_name" in intensity_data
+            and "intensity" in intensity_data
+        ):
             tracking_data = SymptomIntensityCreate(
                 user_id=user_id,
                 symptom_name=intensity_data["symptom_name"],
@@ -133,12 +151,104 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
             )
             success = SymptomTrackingService.record_symptom_intensity(db, tracking_data)
             if success:
+                stored_count += 1
                 print(
                     f"✅ Stored: {intensity_data['symptom_name']} (intensity: {intensity_data['intensity']}/10)"
                 )
+        else:
+            print(f"❌ Invalid intensity data format: {intensity_data}")
 
-        print(
-            f"📊 Recorded {len(symptom_analysis.get('intensities', []))} symptom intensities"
-        )
+    print(f"📊 Recorded {stored_count} symptom intensities")
 
     return response
+
+
+def create_fallback_symptom_analysis(symptoms: str, duration: str) -> list:
+    """Create fallback symptom analysis when LLM doesn't provide it"""
+    fallback_intensities = []
+
+    # Simple keyword-based intensity estimation
+    symptom_keywords = {
+        "mild": 3,
+        "kinda": 3,
+        "slight": 3,
+        "minor": 3,
+        "moderate": 5,
+        "medium": 5,
+        "some": 5,
+        "severe": 8,
+        "very": 8,
+        "pretty": 7,
+        "bad": 7,
+        "strong": 7,
+        "excruciating": 10,
+        "unbearable": 10,
+        "worst": 10,
+        "extreme": 9,
+    }
+
+    # Duration estimation
+    duration_minutes = estimate_duration_minutes(duration)
+
+    # Extract individual symptoms (simple approach)
+    symptom_list = [s.strip() for s in symptoms.split(",") if s.strip()]
+
+    for symptom in symptom_list:
+        # Default intensity
+        base_intensity = 5
+
+        # Adjust based on keywords in the symptom description
+        symptom_lower = symptom.lower()
+        for keyword, intensity in symptom_keywords.items():
+            if keyword in symptom_lower:
+                base_intensity = intensity
+                break
+
+        fallback_intensities.append(
+            {
+                "symptom_name": symptom.strip(),
+                "intensity": base_intensity,
+                "duration_minutes": duration_minutes,
+                "notes": f"Fallback analysis based on: {symptom}",
+            }
+        )
+
+    return fallback_intensities
+
+
+def estimate_duration_minutes(duration: str) -> int:
+    """Estimate duration in minutes from text description"""
+    if not duration:
+        return 60  # Default 1 hour
+
+    duration_lower = duration.lower()
+
+    if "minute" in duration_lower or "few min" in duration_lower:
+        return 30
+    elif "hour" in duration_lower:
+        if "few" in duration_lower:
+            return 180  # 3 hours
+        elif "several" in duration_lower:
+            return 360  # 6 hours
+        else:
+            # Extract number of hours
+            import re
+
+            numbers = re.findall(r"\d+", duration)
+            if numbers:
+                return int(numbers[0]) * 60
+            return 120  # Default 2 hours
+    elif "day" in duration_lower:
+        if "few" in duration_lower:
+            return 4320  # 3 days
+        elif "several" in duration_lower:
+            return 10080  # 7 days
+        else:
+            numbers = re.findall(r"\d+", duration)
+            if numbers:
+                return int(numbers[0]) * 1440  # minutes in a day
+            return 1440  # Default 1 day
+    elif "week" in duration_lower:
+        return 10080  # 1 week
+    else:
+        return 60  # Default 1 hour

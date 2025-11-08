@@ -282,7 +282,6 @@ export default function AnalyticsScreen() {
         )}
       </View>
 
-      {/* Rest of your component remains the same */}
       {/* Symptom Frequency Pie Chart */}
       <View style={analyticsStyles.card}>
         <View style={analyticsStyles.cardHeader}>
@@ -322,28 +321,41 @@ export default function AnalyticsScreen() {
               />
             </View>
 
-            {/* Frequency list */}
+            {/* Frequency list with last reported time */}
             <View style={analyticsStyles.frequencyList}>
-              {data.symptomFrequency.slice(0, 5).map((item, index) => (
-                <View key={item.symptom} style={analyticsStyles.frequencyItem}>
-                  <View style={analyticsStyles.frequencyRank}>
-                    <Text style={analyticsStyles.rankText}>#{index + 1}</Text>
+              {data.symptomFrequency.slice(0, 5).map((item, index) => {
+                // Format the last occurrence date
+                const lastReported = item.last_occurrence ?
+                  new Date(item.last_occurrence).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  }) : 'Never';
+
+                return (
+                  <View key={item.symptom} style={analyticsStyles.frequencyItem}>
+                    <View style={analyticsStyles.frequencyRank}>
+                      <Text style={analyticsStyles.rankText}>#{index + 1}</Text>
+                    </View>
+                    <View style={analyticsStyles.frequencyInfo}>
+                      <Text style={analyticsStyles.frequencySymptom}>
+                        {item.symptom}
+                      </Text>
+                      <Text style={analyticsStyles.frequencyCount}>
+                        {item.frequency} occurrences
+                      </Text>
+                      <Text style={analyticsStyles.lastReportedText}>
+                        Last: {lastReported}
+                      </Text>
+                    </View>
+                    <View style={analyticsStyles.frequencyPercentage}>
+                      <Text style={analyticsStyles.percentageText}>
+                        {item.percentage.toFixed(1)}%
+                      </Text>
+                    </View>
                   </View>
-                  <View style={analyticsStyles.frequencyInfo}>
-                    <Text style={analyticsStyles.frequencySymptom}>
-                      {item.symptom}
-                    </Text>
-                    <Text style={analyticsStyles.frequencyCount}>
-                      {item.frequency} occurrences
-                    </Text>
-                  </View>
-                  <View style={analyticsStyles.frequencyPercentage}>
-                    <Text style={analyticsStyles.percentageText}>
-                      {item.percentage.toFixed(1)}%
-                    </Text>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         ) : (

@@ -310,6 +310,11 @@ export const analyticsStyles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
-
+  // Add to your existing analyticsStyles.ts
+  lastReportedText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
 });
 

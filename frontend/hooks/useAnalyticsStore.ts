@@ -19,6 +19,7 @@ interface SymptomFrequency {
   frequency: number;
   color: string;
   percentage: number;
+  last_occurrence: string;
 }
 
 interface AnalyticsData {
@@ -303,9 +304,27 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
   fetchTestSymptomFrequency: async () => {
     console.log('🔄 Using test data for symptom frequency');
     const testData = [
-      { symptom: "headache", frequency: 5, percentage: 38.5, color: getSymptomColor("headache", 0) },
-      { symptom: "fever", frequency: 4, percentage: 30.8, color: getSymptomColor("fever", 1) },
-      { symptom: "fatigue", frequency: 4, percentage: 30.8, color: getSymptomColor("fatigue", 2) }
+      {
+        symptom: "headache",
+        frequency: 5,
+        percentage: 38.5,
+        color: getSymptomColor("headache", 0),
+        last_occurrence: new Date().toISOString()
+      },
+      {
+        symptom: "fever",
+        frequency: 4,
+        percentage: 30.8,
+        color: getSymptomColor("fever", 1),
+        last_occurrence: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        symptom: "fatigue",
+        frequency: 4,
+        percentage: 30.8,
+        color: getSymptomColor("fatigue", 2),
+        last_occurrence: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      }
     ];
 
     set(state => ({
