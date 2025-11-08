@@ -1,4 +1,4 @@
-# services/symptom_tracking_service.py - FIXED SQL QUERY VERSION
+# services/symptom_tracking_service.py - FIXED DURATION CONSTRAINT
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database.database import get_db
@@ -12,8 +12,13 @@ class SymptomTrackingService:
     def record_symptom_intensity(
         db: Session, intensity_data: SymptomIntensityCreate
     ) -> bool:
-        """Record symptom intensity for a patient"""
+        """Record symptom intensity for a patient - FIXED DURATION CONSTRAINT"""
         try:
+            # FIXED: Ensure duration_minutes is at least 1 to satisfy check constraint
+            duration_minutes = intensity_data.duration_minutes or 1
+            if duration_minutes < 1:
+                duration_minutes = 1  # Set minimum duration to 1 minute
+
             # Insert into symptom_intensity table
             query = text("""
                 INSERT INTO symptom_intensity 
@@ -26,7 +31,7 @@ class SymptomTrackingService:
                     "user_id": intensity_data.user_id,
                     "symptom_name": intensity_data.symptom_name,
                     "intensity": intensity_data.intensity,
-                    "duration_minutes": intensity_data.duration_minutes or 0,
+                    "duration_minutes": duration_minutes,
                     "notes": intensity_data.notes,
                 },
             )

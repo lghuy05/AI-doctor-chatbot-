@@ -286,4 +286,30 @@ export const analyticsStyles = StyleSheet.create({
     justifyContent: 'center',
     padding: 40,
   },
+  // Add to your analyticsStyles.ts
+  legendContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 8,
+    marginVertical: 4,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#666',
+  },
+
 });
+

@@ -1,5 +1,5 @@
-// app/(drawer)/analytics.tsx - FIXED LINE CHART VERSION
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
+// app/(drawer)/analytics.tsx - MULTIPLE SYMPTOMS LINE CHART
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions, LogBox } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { analyticsStyles } from '../styles/analyticsStyles';
 import { useState, useEffect } from 'react';
@@ -18,6 +18,11 @@ export default function AnalyticsScreen() {
   } = useAnalyticsStore();
 
   const [refreshing, setRefreshing] = useState(false);
+
+  // Suppress the specific warning
+  useEffect(() => {
+    LogBox.ignoreLogs(['onStartShouldSetResponder']);
+  }, []);
 
   const toggleDrawer = () => {
     // @ts-ignore
@@ -38,58 +43,54 @@ export default function AnalyticsScreen() {
     setRefreshing(false);
   };
 
-  // FIXED LINE CHART DATA - Proper format for gifted charts
+  // FIXED: Show multiple symptoms in line chart
   const getLineChartData = () => {
-    const { dates, symptoms } = data.symptomIntensity;
+    const { symptoms } = data.symptomIntensity;
 
-    if (dates.length === 0 || Object.keys(symptoms).length === 0) {
+    if (Object.keys(symptoms).length === 0) {
       return [];
     }
 
-    // Get the first symptom that has data
+    console.log('📈 Available symptoms for line chart:', Object.keys(symptoms));
+
+    // Get all symptoms that have data
     const symptomNames = Object.keys(symptoms);
-    const primarySymptom = symptoms[symptomNames[0]];
 
-    if (!primarySymptom.data || primarySymptom.data.length === 0) {
-      return [];
-    }
+    // Create data sets for each symptom
+    const dataSets = symptomNames.map(symptomName => {
+      const symptom = symptoms[symptomName];
 
-    console.log('📈 Processing line chart data for:', primarySymptom.name);
+      if (!symptom.data || symptom.data.length === 0) {
+        return null;
+      }
 
-    // Transform data to match gifted charts format
-    const lineData = primarySymptom.data.map((point, index) => {
-      // Format date for display (e.g., "Nov 06")
-      const date = new Date(point.date);
-      const day = date.getDate();
-      const month = date.toLocaleString('default', { month: 'short' });
-      const formattedDate = `${month} ${day}`;
+      console.log(`📈 Processing ${symptomName}:`, symptom.data);
+
+      // Transform data to match gifted charts format
+      const lineData = symptom.data.map((point, index) => {
+        // Format date for display (e.g., "Nov 06")
+        const date = new Date(point.date);
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'short' });
+        const formattedDate = `${month} ${day}`;
+
+        return {
+          value: point.intensity,
+          label: index === 0 || index === symptom.data.length - 1 ? formattedDate : '', // Show first and last labels
+          dataPointText: point.intensity.toString(),
+          labelTextStyle: { color: 'gray', fontSize: 10 },
+        };
+      });
 
       return {
-        value: point.intensity,
-        label: index % 2 === 0 ? formattedDate : '', // Show every other label
-        dataPointText: point.intensity.toString(),
-        labelTextStyle: { color: 'gray', fontSize: 10 },
+        data: lineData,
+        color: symptom.color || '#3B82F6',
+        name: symptomName
       };
-    });
+    }).filter(Boolean); // Remove null entries
 
-    console.log('✅ Line chart data points:', lineData.length);
-    return lineData;
-  };
-
-  // Custom data point component
-  const CustomDataPoint = () => {
-    return (
-      <View
-        style={{
-          width: 14,
-          height: 14,
-          backgroundColor: 'white',
-          borderWidth: 3,
-          borderRadius: 7,
-          borderColor: '#3B82F6',
-        }}
-      />
-    );
+    console.log('✅ Line chart data sets:', dataSets.length);
+    return dataSets;
   };
 
   // Keep pie chart working as before
@@ -103,9 +104,12 @@ export default function AnalyticsScreen() {
     }));
   };
 
-  const lineData = getLineChartData();
+  const lineDataSets = getLineChartData();
   const pieData = getPieChartData();
-  const hasLineData = lineData.length > 0;
+  const hasLineData = lineDataSets.length > 0;
+
+  // For single line display (backward compatibility)
+  const primaryLineData = lineDataSets[0]?.data || [];
 
   if (isLoading && !data.lastUpdated) {
     return (
@@ -149,7 +153,7 @@ export default function AnalyticsScreen() {
         </View>
       </View>
 
-      {/* Symptom Intensity Line Chart - COMPLETELY FIXED VERSION */}
+      {/* Symptom Intensity Line Chart - MULTIPLE SYMPTOMS VERSION */}
       <View style={analyticsStyles.card}>
         <View style={analyticsStyles.cardHeader}>
           <Text style={analyticsStyles.cardTitle}>Symptom Intensity</Text>
@@ -172,41 +176,99 @@ export default function AnalyticsScreen() {
 
         {hasLineData ? (
           <View style={analyticsStyles.chartContainer}>
-            <LineChart
-              data={lineData}
-              spacing={50}
-              thickness={3}
-              hideRules={false}
-              hideDataPoints={false}
-              color="#3B82F6"
-              yAxisColor="#3B82F6"
-              xAxisColor="#3B82F6"
-              dataPointsColor="#3B82F6"
-              dataPointsRadius={6}
-              initialSpacing={20}
-              endSpacing={20}
-              height={220}
-              yAxisOffset={0}
-              noOfSections={5}
-              maxValue={10}
-              isAnimated={true}
-              animateOnDataChange={false}
-              animationDuration={1000}
-              showVerticalLines={true}
-              verticalLinesColor="rgba(59, 130, 246, 0.1)"
-              verticalLinesThickness={1}
-              xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
-              yAxisTextStyle={{ color: 'gray', fontSize: 12 }}
-              areaChart={false}
-              curved={true}
-              curvature={0.2}
-              strokeLinecap="round"
-              focusEnabled={false}
-              showValuesAsDataPointsText={false}
-            // Remove customDataPoint for now to use default
-            />
+            {/* Show multiple lines using dataSet prop */}
+            {lineDataSets.length === 1 ? (
+              // Single line (original behavior)
+              <LineChart
+                data={primaryLineData}
+                spacing={50}
+                thickness={3}
+                hideRules={false}
+                hideDataPoints={false}
+                color={lineDataSets[0].color}
+                yAxisColor="#3B82F6"
+                xAxisColor="#3B82F6"
+                dataPointsColor={lineDataSets[0].color}
+                dataPointsRadius={6}
+                initialSpacing={20}
+                endSpacing={20}
+                height={220}
+                yAxisOffset={0}
+                noOfSections={5}
+                maxValue={10}
+                isAnimated={true}
+                animateOnDataChange={false}
+                animationDuration={1000}
+                showVerticalLines={true}
+                verticalLinesColor="rgba(59, 130, 246, 0.1)"
+                verticalLinesThickness={1}
+                xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
+                yAxisTextStyle={{ color: 'gray', fontSize: 12 }}
+                areaChart={false}
+                curved={true}
+                curvature={0.2}
+                strokeLinecap="round"
+                focusEnabled={false}
+                showValuesAsDataPointsText={false}
+              />
+            ) : (
+              // Multiple lines using dataSet
+              <LineChart
+                dataSet={lineDataSets.map((dataset, index) => ({
+                  data: dataset.data,
+                  color: dataset.color,
+                  thickness: 3,
+                  curved: true,
+                  hideDataPoints: false,
+                  dataPointsColor: dataset.color,
+                  dataPointsRadius: 4,
+                }))}
+                spacing={50}
+                hideRules={false}
+                yAxisColor="#3B82F6"
+                xAxisColor="#3B82F6"
+                initialSpacing={20}
+                endSpacing={20}
+                height={220}
+                yAxisOffset={0}
+                noOfSections={5}
+                maxValue={10}
+                isAnimated={true}
+                showVerticalLines={true}
+                verticalLinesColor="rgba(59, 130, 246, 0.1)"
+                xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
+                yAxisTextStyle={{ color: 'gray', fontSize: 12 }}
+                areaChart={false}
+                curvature={0.2}
+                strokeLinecap="round"
+                focusEnabled={false}
+              />
+            )}
+
+            {/* Legend for multiple symptoms */}
+            {lineDataSets.length > 1 && (
+              <View style={analyticsStyles.legendContainer}>
+                {lineDataSets.map((dataset, index) => (
+                  <View key={dataset.name} style={analyticsStyles.legendItem}>
+                    <View
+                      style={[
+                        analyticsStyles.legendColor,
+                        { backgroundColor: dataset.color }
+                      ]}
+                    />
+                    <Text style={analyticsStyles.legendText}>
+                      {dataset.name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             <Text style={[analyticsStyles.cardSubtitle, { textAlign: 'center', marginTop: 10 }]}>
-              {Object.values(data.symptomIntensity.symptoms)[0]?.name || 'Symptom'} Intensity Over Time
+              {lineDataSets.length === 1
+                ? `${lineDataSets[0].name} Intensity Over Time`
+                : 'Multiple Symptoms Intensity'
+              }
             </Text>
           </View>
         ) : (
@@ -220,7 +282,8 @@ export default function AnalyticsScreen() {
         )}
       </View>
 
-      {/* Symptom Frequency Pie Chart - KEEP WORKING VERSION */}
+      {/* Rest of your component remains the same */}
+      {/* Symptom Frequency Pie Chart */}
       <View style={analyticsStyles.card}>
         <View style={analyticsStyles.cardHeader}>
           <Text style={analyticsStyles.cardTitle}>Symptom Frequency</Text>
