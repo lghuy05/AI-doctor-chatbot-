@@ -1,4 +1,4 @@
-# routes/analytics.py - UPDATED FOR FIXED SQL
+# routes/analytics.py - FIXED SYNTAX ERROR VERSION
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.database import get_db
@@ -44,13 +44,19 @@ def get_symptom_intensity(days: int = 30, db: Session = Depends(get_db)):
                 symptoms_data[symptom_name] = {"name": symptom_name, "data": []}
 
             # FIXED: Use daily_avg_intensity only (individual intensity is no longer in SELECT)
-            intensity_value = float(record.daily_avg_intensity) if record.daily_avg_intensity is not None else 0
+            intensity_value = (
+                float(record.daily_avg_intensity)
+                if record.daily_avg_intensity is not None
+                else 0
+            )
 
             symptoms_data[symptom_name]["data"].append(
                 {
                     "date": date_str,
                     "intensity": intensity_value,
-                    "occurrences": int(record.daily_occurrences) if record.daily_occurrences else 1,
+                    "occurrences": int(record.daily_occurrences)
+                    if record.daily_occurrences
+                    else 1,
                 }
             )
 
@@ -129,4 +135,8 @@ def get_symptom_summary(db: Session = Depends(get_db)):
         summary = SymptomTrackingService.get_symptom_summary(db, user_id)
         return {"success": True, "summary": summary}
     except Exception as e:
-        return {"success": False, "error": str(e), "summary": {}
+        return {
+            "success": False,
+            "error": str(e),
+            "summary": {},
+        }  # FIXED: Added missing closing bracket
