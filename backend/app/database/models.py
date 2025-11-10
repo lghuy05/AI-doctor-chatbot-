@@ -25,4 +25,4 @@ class UserFHIRMapping(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationship to User
-    user = relationship("User", back_populates="fhir_mapping")
+    user = relationship("User")
