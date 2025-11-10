@@ -1,9 +1,30 @@
 # routes/patient_profile.py
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.schemas.profile_schemas import ProfileResponse, PatientProfile
 from app.services.fhir_service import FHIRService
+from app.database.models import UserFHIRMapping, User
+from app.services.auth_service import get_current_user
+from app.database.database import get_db
+from sqlalchemy.orm import Session
 
 router = APIRouter()
+
+
+@router.get("/patient/profile/me")  # New endpoint for authenticated user
+def get_my_patient_profile(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """Get the patient profile mapped to the authenticated user"""
+    mapping = (
+        db.query(UserFHIRMapping)
+        .filter(UserFHIRMapping.user_id == current_user.id)
+        .first()
+    )
+
+    if not mapping:
+        raise HTTPException(404, "No patient mapped to your account")
+
+    return get_patient_profile(mapping.fhir_patient_id)
 
 
 @router.get("/patient/profile/{patient_id}", response_model=ProfileResponse)

@@ -50,11 +50,11 @@ async def authenticate_request(request: Request, call_next):
         "/openapi.json",
         "/favicon.ico",
         "/patient/discover",
-        "/patient/profile",
-        "/patient/medications",
-        "/ehr-advice",
+        # "/patient/profile",
+        # "/patient/medications",
+        # "/ehr-advice",
         "/triage",
-        "/analytics",
+        # "/analytics",
     ]
 
     # Check if path starts with any public path
@@ -90,6 +90,19 @@ async def log_requests(request: Request, call_next):
         raise
 
 
+# Add to main.py for debugging
+@app.middleware("http")
+async def debug_auth(request: Request, call_next):
+    auth_header = request.headers.get("Authorization")
+    if auth_header:
+        print(f"🔐 Token present for: {request.url.path}")
+    else:
+        print(f"🔓 No token for: {request.url.path}")
+
+    response = await call_next(request)
+    return response
+
+
 # Include base routers
 app.include_router(auth.router)
 app.include_router(triage.router)
@@ -110,11 +123,13 @@ if EHR_ENABLED:
         print(f"Failed to import EHR: {e}")
 
 # Add analytics routes
+analytics_succeed = False
 try:
     from app.routes.analytics import router as analytics_router
 
     app.include_router(analytics_router)
     print("✅ Analytics routes registered")
+    analytics_succeed = True
 except ImportError as e:
     print(f"Analytics routes not available: {e}")
 
@@ -127,6 +142,7 @@ async def root():
         "status": "healthy",
         "ehr_integration": ehr_status,
         "fhir_server": FHIR_BASE_URL if EHR_ENABLED else "none",
+        "analytics": analytics_succeed if analytics_succeed else "none",
     }
 
 

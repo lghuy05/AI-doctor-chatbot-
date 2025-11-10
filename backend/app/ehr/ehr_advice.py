@@ -1,4 +1,4 @@
-# routes/ehr_advice.py - FIXED VERSION
+from app.database.models import User, UserFHIRMapping
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database.database import get_db
@@ -8,12 +8,29 @@ from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
 from app.services.symptom_tracking_service import SymptomTrackingService
 from app.services.rag_service import get_medical_context
+from app.services.auth_service import get_current_user
 
 router = APIRouter()
 
 
 @router.post("/ehr-advice", response_model=EnhancedAdviceOut)
-def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
+def enhanced_advice_with_ehr(
+    inp: SymptomInput,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    mapping = (
+        db.query(UserFHIRMapping)
+        .filter(UserFHIRMapping.user_id == current_user.id)
+        .first()
+    )
+    if not mapping:
+        mapping = UserFHIRMapping(user_id=current_user.id, fhir_patient_id="example")
+        db.add(mapping)
+        db.commit()
+        print(f"Mapped user {current_user.id} to mock patient")
+    ehr_data = FHIRService.get_patient_profile(mapping.fhir_patient_id)
+
     # 1. Triage first (safety check)
     triage = triage_rules(inp.symptoms)
     if triage.risk == "emergency":
@@ -24,14 +41,18 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
 
     # 3. Get EHR data for LLM context
     ehr_context = {
-        "ehr_medications": inp.meds,
-        "ehr_conditions": inp.conditions,
-        "ehr_age": inp.age,
-        "ehr_gender": inp.sex,
+        "ehr_medications": [
+            med["name"] for med in ehr_data.get("active_medications", [])
+        ],
+        "ehr_conditions": [
+            cond["name"] for cond in ehr_data.get("medical_conditions", [])
+        ],
+        "ehr_age": ehr_data.get("age"),
+        "ehr_gender": ehr_data.get("gender"),
+        "source": "mock_ehr",
     }
-    print(
-        f"📋 Using patient-provided data: {len(inp.meds)} meds, {len(inp.conditions)} conditions"
-    )
+
+    print(f"📋 Using REAL EHR data from patient: {ehr_data['name']}")
 
     def build_messages():
         system = (
@@ -132,7 +153,7 @@ def enhanced_advice_with_ehr(inp: SymptomInput, db: Session = Depends(get_db)):
         )
 
     # Store each symptom intensity
-    user_id = int(inp.patient_id) if inp.patient_id and inp.patient_id.isdigit() else 1
+    user_id = current_user.id
 
     stored_count = 0
     for intensity_data in symptom_intensities_to_store:

@@ -22,8 +22,8 @@ class FHIRService:
             ):
                 age -= 1
             return age
-        except:
-            return None
+        except Exception as e:
+            return str(e)
 
     @staticmethod
     def get_patient_profile(patient_id: str) -> Optional[Dict]:

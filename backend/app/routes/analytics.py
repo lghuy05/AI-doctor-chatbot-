@@ -5,15 +5,21 @@ from app.database.database import get_db
 from app.services.symptom_tracking_service import SymptomTrackingService
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
+from app.services.auth_service import get_current_user
+from app.database.models import User
 
 router = APIRouter()
 
 
 @router.get("/analytics/symptom-intensity")
-def get_symptom_intensity(days: int = 30, db: Session = Depends(get_db)):
+def get_symptom_intensity(
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Get symptom intensity data - UPDATED FOR FIXED SQL"""
     try:
-        user_id = 1
+        user_id = current_user.id
 
         # Use existing service method
         intensity_data = SymptomTrackingService.get_symptom_intensity_history(
@@ -99,10 +105,14 @@ def get_symptom_intensity(days: int = 30, db: Session = Depends(get_db)):
 
 
 @router.get("/analytics/symptom-frequency")
-def get_symptom_frequency(months: int = 6, db: Session = Depends(get_db)):
+def get_symptom_frequency(
+    months: int = 6,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Get symptom frequency data - KEEP WORKING VERSION"""
     try:
-        user_id = 1
+        user_id = current_user.id
         frequency_data = SymptomTrackingService.get_symptom_frequency(
             db, user_id, months
         )
@@ -128,10 +138,12 @@ def get_symptom_frequency(months: int = 6, db: Session = Depends(get_db)):
 
 
 @router.get("/analytics/symptom-summary")
-def get_symptom_summary(db: Session = Depends(get_db)):
+def get_symptom_summary(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     """Get overall symptom summary"""
     try:
-        user_id = 1
+        user_id = current_user.id
         summary = SymptomTrackingService.get_symptom_summary(db, user_id)
         return {"success": True, "summary": summary}
     except Exception as e:

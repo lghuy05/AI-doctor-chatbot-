@@ -3,9 +3,10 @@
 # ------------------------------------------------------
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Literal, Optional, Dict
-from app.database.database import Base
+
+# from app.database.database import Base
 from datetime import datetime, date
-from decimal import Decimal
+# from decimal import Decimal
 
 # ------------------------------------------------------
 # Step 2: Define the request model the app expects from the client
