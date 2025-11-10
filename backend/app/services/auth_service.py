@@ -67,11 +67,19 @@ def get_current_user(
     if not payload:
         raise credentials_exception
 
+    user_id: int = payload.get("user_id")
     username: str = payload.get("sub")
+
     if username is None:
         raise credentials_exception
 
-    user = db.query(User).filter(User.username == username).first()
+    user = None
+    if user_id:
+        user = db.query(User).filter(User.id == user_id).first()
+        print(f"Looking for user by username: {username}, found: {user is not None}")
+    if not user and username:
+        user = db.query(User).filter(User.username == username).first()
+        print(f"Looking for user by username: {username}, found: {user is not None}")
     if user is None:
         raise credentials_exception
 
