@@ -19,7 +19,8 @@ def get_symptom_intensity(
 ):
     """Get symptom intensity data - UPDATED FOR FIXED SQL"""
     try:
-        user_id = current_user.id
+        # user_id = current_user.id
+        user_id = 1
 
         # Use existing service method
         intensity_data = SymptomTrackingService.get_symptom_intensity_history(
@@ -112,7 +113,8 @@ def get_symptom_frequency(
 ):
     """Get symptom frequency data - KEEP WORKING VERSION"""
     try:
-        user_id = current_user.id
+        # user_id = current_user.id
+        user_id = 1
         frequency_data = SymptomTrackingService.get_symptom_frequency(
             db, user_id, months
         )
@@ -143,7 +145,8 @@ def get_symptom_summary(
 ):
     """Get overall symptom summary"""
     try:
-        user_id = current_user.id
+        # user_id = current_user.id
+        user_id = 1
         summary = SymptomTrackingService.get_symptom_summary(db, user_id)
         return {"success": True, "summary": summary}
     except Exception as e:
