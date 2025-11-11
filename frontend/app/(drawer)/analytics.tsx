@@ -1,4 +1,4 @@
-// app/(drawer)/analytics.tsx - SIMPLIFIED HEALTH SUMMARY VERSION
+// app/(drawer)/analytics.tsx - WITH DEBUGGING
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, LogBox } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { analyticsStyles } from '../styles/analyticsStyles';
@@ -46,15 +46,30 @@ export default function AnalyticsScreen() {
     setRefreshing(false);
   };
 
-  // FIXED: Show multiple symptoms in line chart
+  // FIXED: Show multiple symptoms in line chart WITH DEBUGGING
   const getLineChartData = () => {
-    const { symptoms } = data.symptomIntensity;
+    const { symptoms, dates } = data.symptomIntensity;
+
+    console.log('🔍 DEBUG - Raw symptom intensity data:', {
+      allDates: dates,
+      symptomsCount: Object.keys(symptoms).length,
+      symptoms: Object.keys(symptoms)
+    });
 
     if (Object.keys(symptoms).length === 0) {
+      console.log('🔍 DEBUG - No symptoms data available');
       return [];
     }
 
-    console.log('📈 Available symptoms for line chart:', Object.keys(symptoms));
+    // DEBUG: Log each symptom's data
+    Object.keys(symptoms).forEach(symptomName => {
+      const symptom = symptoms[symptomName];
+      console.log(`🔍 DEBUG - ${symptomName}:`, {
+        dataPoints: symptom.data?.length,
+        dates: symptom.data?.map((p: any) => p.date),
+        intensities: symptom.data?.map((p: any) => p.intensity)
+      });
+    });
 
     // Get all symptoms that have data
     const symptomNames = Object.keys(symptoms);
@@ -64,10 +79,11 @@ export default function AnalyticsScreen() {
       const symptom = symptoms[symptomName];
 
       if (!symptom.data || symptom.data.length === 0) {
+        console.log(`🔍 DEBUG - No data for symptom: ${symptomName}`);
         return null;
       }
 
-      console.log(`📈 Processing ${symptomName}:`, symptom.data);
+      console.log(`🔍 DEBUG - Processing ${symptomName} with ${symptom.data.length} data points`);
 
       // FIXED: Better date formatting to show all dates
       const lineData = symptom.data.map((point, index) => {
@@ -77,6 +93,13 @@ export default function AnalyticsScreen() {
         const month = date.toLocaleString('default', { month: 'short' });
         const formattedDate = `${month} ${day}`;
 
+        console.log(`🔍 DEBUG - ${symptomName} point ${index}:`, {
+          originalDate: point.date,
+          formattedDate: formattedDate,
+          intensity: point.intensity,
+          jsDate: date.toString()
+        });
+
         return {
           value: point.intensity,
           label: formattedDate, // FIXED: Show ALL dates, not just first/last
@@ -84,6 +107,8 @@ export default function AnalyticsScreen() {
           labelTextStyle: { color: 'gray', fontSize: 9 }, // FIXED: Smaller font to fit more labels
         };
       });
+
+      console.log(`🔍 DEBUG - ${symptomName} final line data:`, lineData);
 
       return {
         data: lineData,
@@ -93,6 +118,8 @@ export default function AnalyticsScreen() {
     }).filter(Boolean); // Remove null entries
 
     console.log('✅ Line chart data sets:', dataSets.length);
+    console.log('🔍 DEBUG - Final dataSets structure:', JSON.stringify(dataSets, null, 2));
+
     return dataSets;
   };
 
@@ -154,6 +181,25 @@ export default function AnalyticsScreen() {
             </Text>
           )}
         </View>
+      </View>
+
+      {/* DEBUG INFO - Remove after fixing */}
+      <View style={[analyticsStyles.card, { backgroundColor: '#fff3cd', borderColor: '#ffeaa7' }]}>
+        <Text style={[analyticsStyles.cardTitle, { color: '#856404' }]}>🔍 DEBUG INFO</Text>
+        <Text style={{ color: '#856404', fontSize: 12, marginBottom: 8 }}>
+          Dates from backend: {JSON.stringify(data.symptomIntensity.dates)}
+        </Text>
+        <Text style={{ color: '#856404', fontSize: 12 }}>
+          Symptoms: {Object.keys(data.symptomIntensity.symptoms).join(', ')}
+        </Text>
+        {Object.keys(data.symptomIntensity.symptoms).map(symptomName => {
+          const symptom = data.symptomIntensity.symptoms[symptomName];
+          return (
+            <Text key={symptomName} style={{ color: '#856404', fontSize: 10 }}>
+              {symptomName}: {symptom.data?.length} points - {symptom.data?.map((p: any) => p.date).join(', ')}
+            </Text>
+          );
+        })}
       </View>
 
       {/* Symptom Intensity Line Chart - MULTIPLE SYMPTOMS VERSION */}

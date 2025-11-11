@@ -19,12 +19,15 @@ class SymptomTrackingService:
             if duration_minutes < 1:
                 duration_minutes = 1  # Set minimum duration to 1 minute
 
+            current_timestamp = datetime.now()
+
             # Insert into symptom_intensity table
             query = text("""
                 INSERT INTO symptom_intensity 
-                (user_id, symptom_name, intensity, duration_minutes, notes, reported_at)
-                VALUES (:user_id, :symptom_name, :intensity, :duration_minutes, :notes, NOW())
+                (user_id, symptom_name, intensity, duration_minutes, notes, created_at)
+                VALUES (:user_id, :symptom_name, :intensity, :duration_minutes, :notes, :created_at)
             """)
+
             result = db.execute(
                 query,
                 {
@@ -33,6 +36,7 @@ class SymptomTrackingService:
                     "intensity": intensity_data.intensity,
                     "duration_minutes": duration_minutes,
                     "notes": intensity_data.notes,
+                    "created_at": current_timestamp,
                 },
             )
 
@@ -45,7 +49,7 @@ class SymptomTrackingService:
                 ON CONFLICT (user_id, symptom_name, month_year) 
                 DO UPDATE SET 
                     occurrence_count = symptom_frequency.occurrence_count + 1,
-                    last_occurrence = NOW()
+                    last_occurrence = :NOW()
             """)
             db.execute(
                 freq_query,
