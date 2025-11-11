@@ -148,7 +148,6 @@ class SymptomIntensityCreate(BaseModel):
     intensity: int = Field(..., ge=1, le=10)
     duration_minutes: Optional[int] = Field(default=0, ge=0)
     notes: Optional[str] = None
-    symptom_date: Optional[date] = None
 
     class Config:
         from_attributes = True

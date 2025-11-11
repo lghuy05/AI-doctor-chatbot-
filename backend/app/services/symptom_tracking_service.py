@@ -49,7 +49,7 @@ class SymptomTrackingService:
                 ON CONFLICT (user_id, symptom_name, month_year) 
                 DO UPDATE SET 
                     occurrence_count = symptom_frequency.occurrence_count + 1,
-                    last_occurrence = :NOW()
+                    last_occurrence = NOW()
             """)
             db.execute(
                 freq_query,
@@ -80,14 +80,14 @@ class SymptomTrackingService:
             query = text("""
                 SELECT 
                     symptom_name,
-                    DATE(reported_at) as date,
+                    DATE(created_at) as date,
                     AVG(intensity) as daily_avg_intensity,
                     COUNT(*) as daily_occurrences,
                     AVG(duration_minutes) as avg_duration
                 FROM symptom_intensity 
                 WHERE user_id = :user_id 
-                AND reported_at >= (CURRENT_DATE - INTERVAL ':days days')::date
-                GROUP BY symptom_name, DATE(reported_at)
+                AND reported_at >= (CURRENT_DATE - INTERVAL ':days days')
+                GROUP BY symptom_name, DATE(created_at)
                 ORDER BY date ASC, symptom_name
             """)
             result = db.execute(query, {"user_id": user_id, "days": days})
