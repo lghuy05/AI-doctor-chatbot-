@@ -1,4 +1,4 @@
-// app/(drawer)/analytics.tsx - WITH DEBUGGING
+// app/(drawer)/analytics.tsx - CLEANED AND FIXED VERSION
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, LogBox } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { analyticsStyles } from '../styles/analyticsStyles';
@@ -19,7 +19,6 @@ export default function AnalyticsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  // Suppress warnings
   useEffect(() => {
     LogBox.ignoreLogs([
       'onStartShouldSetResponder',
@@ -46,30 +45,13 @@ export default function AnalyticsScreen() {
     setRefreshing(false);
   };
 
-  // FIXED: Show multiple symptoms in line chart WITH DEBUGGING
+  // FIXED: Multiple symptoms in line chart with proper date formatting
   const getLineChartData = () => {
     const { symptoms, dates } = data.symptomIntensity;
 
-    console.log('🔍 DEBUG - Raw symptom intensity data:', {
-      allDates: dates,
-      symptomsCount: Object.keys(symptoms).length,
-      symptoms: Object.keys(symptoms)
-    });
-
     if (Object.keys(symptoms).length === 0) {
-      console.log('🔍 DEBUG - No symptoms data available');
       return [];
     }
-
-    // DEBUG: Log each symptom's data
-    Object.keys(symptoms).forEach(symptomName => {
-      const symptom = symptoms[symptomName];
-      console.log(`🔍 DEBUG - ${symptomName}:`, {
-        dataPoints: symptom.data?.length,
-        dates: symptom.data?.map((p: any) => p.date),
-        intensities: symptom.data?.map((p: any) => p.intensity)
-      });
-    });
 
     // Get all symptoms that have data
     const symptomNames = Object.keys(symptoms);
@@ -79,51 +61,36 @@ export default function AnalyticsScreen() {
       const symptom = symptoms[symptomName];
 
       if (!symptom.data || symptom.data.length === 0) {
-        console.log(`🔍 DEBUG - No data for symptom: ${symptomName}`);
         return null;
       }
 
-      console.log(`🔍 DEBUG - Processing ${symptomName} with ${symptom.data.length} data points`);
-
-      // FIXED: Better date formatting to show all dates
+      // FIXED: Proper date formatting using the date string directly
       const lineData = symptom.data.map((point, index) => {
-        // Format date for display (e.g., "Nov 06")
-        const date = new Date(point.date);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = date.toLocaleString('default', { month: 'short' });
-        const formattedDate = `${month} ${day}`;
+        // Use the date string directly from backend (already in Tampa time)
+        const dateParts = point.date.split('-');
+        const month = new Date(point.date).toLocaleString('default', { month: 'short' });
+        const day = dateParts[2]; // Get day directly from YYYY-MM-DD format
 
-        console.log(`🔍 DEBUG - ${symptomName} point ${index}:`, {
-          originalDate: point.date,
-          formattedDate: formattedDate,
-          intensity: point.intensity,
-          jsDate: date.toString()
-        });
+        const formattedDate = `${month} ${day}`;
 
         return {
           value: point.intensity,
-          label: formattedDate, // FIXED: Show ALL dates, not just first/last
+          label: formattedDate,
           dataPointText: point.intensity.toString(),
-          labelTextStyle: { color: 'gray', fontSize: 9 }, // FIXED: Smaller font to fit more labels
+          labelTextStyle: { color: 'gray', fontSize: 9 },
         };
       });
-
-      console.log(`🔍 DEBUG - ${symptomName} final line data:`, lineData);
 
       return {
         data: lineData,
         color: symptom.color || '#3B82F6',
         name: symptomName
       };
-    }).filter(Boolean); // Remove null entries
-
-    console.log('✅ Line chart data sets:', dataSets.length);
-    console.log('🔍 DEBUG - Final dataSets structure:', JSON.stringify(dataSets, null, 2));
+    }).filter(Boolean);
 
     return dataSets;
   };
 
-  // Keep pie chart working as before
   const getPieChartData = () => {
     if (!data.symptomFrequency.length) return [];
 
@@ -137,8 +104,6 @@ export default function AnalyticsScreen() {
   const lineDataSets = getLineChartData();
   const pieData = getPieChartData();
   const hasLineData = lineDataSets.length > 0;
-
-  // For single line display (backward compatibility)
   const primaryLineData = lineDataSets[0]?.data || [];
 
   if (isLoading && !data.lastUpdated) {
@@ -181,25 +146,6 @@ export default function AnalyticsScreen() {
             </Text>
           )}
         </View>
-      </View>
-
-      {/* DEBUG INFO - Remove after fixing */}
-      <View style={[analyticsStyles.card, { backgroundColor: '#fff3cd', borderColor: '#ffeaa7' }]}>
-        <Text style={[analyticsStyles.cardTitle, { color: '#856404' }]}>🔍 DEBUG INFO</Text>
-        <Text style={{ color: '#856404', fontSize: 12, marginBottom: 8 }}>
-          Dates from backend: {JSON.stringify(data.symptomIntensity.dates)}
-        </Text>
-        <Text style={{ color: '#856404', fontSize: 12 }}>
-          Symptoms: {Object.keys(data.symptomIntensity.symptoms).join(', ')}
-        </Text>
-        {Object.keys(data.symptomIntensity.symptoms).map(symptomName => {
-          const symptom = data.symptomIntensity.symptoms[symptomName];
-          return (
-            <Text key={symptomName} style={{ color: '#856404', fontSize: 10 }}>
-              {symptomName}: {symptom.data?.length} points - {symptom.data?.map((p: any) => p.date).join(', ')}
-            </Text>
-          );
-        })}
       </View>
 
       {/* Symptom Intensity Line Chart - MULTIPLE SYMPTOMS VERSION */}
@@ -265,7 +211,7 @@ export default function AnalyticsScreen() {
                 formatYLabel={(value) => `${Math.round(value)}`}
               />
             ) : (
-              // Multiple lines using dataSet - FIXED SYNTAX
+              // Multiple lines using dataSet
               <LineChart
                 dataSet={lineDataSets.map((dataset, index) => ({
                   data: dataset.data,
@@ -378,10 +324,9 @@ export default function AnalyticsScreen() {
               />
             </View>
 
-            {/* Frequency list with last reported time - FIXED COLOR MATCHING */}
+            {/* Frequency list with last reported time */}
             <View style={analyticsStyles.frequencyList}>
               {data.symptomFrequency.slice(0, 5).map((item, index) => {
-                // Format the last occurrence date
                 const lastReported = item.last_occurrence ?
                   new Date(item.last_occurrence).toLocaleDateString('en-US', {
                     month: 'short',
@@ -428,7 +373,7 @@ export default function AnalyticsScreen() {
         )}
       </View>
 
-      {/* SIMPLIFIED: Health Summary - Just Total Records */}
+      {/* Tracking Overview */}
       <View style={analyticsStyles.card}>
         <View style={analyticsStyles.cardHeader}>
           <Text style={analyticsStyles.cardTitle}>Tracking Overview</Text>

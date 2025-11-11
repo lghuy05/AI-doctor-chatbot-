@@ -1,4 +1,4 @@
-// hooks/useAnalyticsStore.ts - COMPLETE FIXED VERSION
+// hooks/useAnalyticsStore.ts - CLEANED VERSION
 import { create } from 'zustand';
 import api from '../api/client';
 
@@ -74,7 +74,7 @@ const initialState: AnalyticsData = {
   lastUpdated: null
 };
 
-// Color palette for symptoms - optimized for gifted charts
+// Color palette for symptoms
 const symptomColors = [
   '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
   '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
@@ -82,7 +82,6 @@ const symptomColors = [
 ];
 
 const getSymptomColor = (symptomName: string, index: number): string => {
-  // Try to assign consistent colors for common symptoms
   const colorMap: { [key: string]: string } = {
     'headache': '#3B82F6',
     'fever': '#EF4444',
@@ -138,17 +137,10 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
 
   fetchSymptomIntensity: async (days: number = 30) => {
     try {
-      console.log(`📊 Fetching symptom intensity for ${days} days`);
       const response = await api.get(`/analytics/symptom-intensity?days=${days}`);
 
       if (response.data.success) {
         const processedData = response.data.data;
-
-        console.log('📊 Symptom Intensity Data Received:', {
-          dates: processedData.dates?.length || 0,
-          symptoms: Object.keys(processedData.symptoms || {}).length,
-          hasSymptoms: !!processedData.symptoms
-        });
 
         // Process and assign colors to symptoms
         if (processedData.symptoms) {
@@ -163,32 +155,20 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
             symptomIntensity: processedData
           }
         }));
-
-        console.log('✅ Symptom intensity data processed successfully');
       } else {
-        console.error('❌ API returned success:false for symptom intensity', response.data);
-        // Fallback to test data if real data fails
-        await get().fetchTestSymptomIntensity();
+        console.error('API returned success:false for symptom intensity', response.data);
       }
     } catch (error: any) {
-      console.error('❌ Failed to fetch symptom intensity:', error);
-      // Fallback to test data on error
-      await get().fetchTestSymptomIntensity();
+      console.error('Failed to fetch symptom intensity:', error);
     }
   },
 
   fetchSymptomFrequency: async (months: number = 6) => {
     try {
-      console.log(`📊 Fetching symptom frequency for ${months} months`);
       const response = await api.get(`/analytics/symptom-frequency?months=${months}`);
 
       if (response.data.success) {
         const frequencyData = response.data.data || [];
-
-        console.log('📊 Symptom Frequency Data Received:', {
-          count: frequencyData.length,
-          symptoms: frequencyData.map((item: any) => item.symptom)
-        });
 
         // Calculate percentages and assign colors
         const total = frequencyData.reduce((sum: number, item: any) => sum + item.frequency, 0);
@@ -205,23 +185,16 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
             symptomFrequency: dataWithPercentages
           }
         }));
-
-        console.log('✅ Symptom frequency data processed successfully');
       } else {
-        console.error('❌ API returned success:false for symptom frequency', response.data);
-        // Fallback to test data if real data fails
-        await get().fetchTestSymptomFrequency();
+        console.error('API returned success:false for symptom frequency', response.data);
       }
     } catch (error: any) {
-      console.error('❌ Failed to fetch symptom frequency:', error);
-      // Fallback to test data on error
-      await get().fetchTestSymptomFrequency();
+      console.error('Failed to fetch symptom frequency:', error);
     }
   },
 
   fetchSymptomSummary: async () => {
     try {
-      console.log('📊 Fetching symptom summary');
       const response = await api.get('/analytics/symptom-summary');
 
       if (response.data.success) {
@@ -231,126 +204,12 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
             summary: response.data.summary
           }
         }));
-        console.log('✅ Symptom summary data processed successfully');
       } else {
-        console.error('❌ API returned success:false for symptom summary', response.data);
-        // Fallback to test data if real data fails
-        await get().fetchTestSymptomSummary();
+        console.error('API returned success:false for symptom summary', response.data);
       }
     } catch (error: any) {
-      console.error('❌ Failed to fetch symptom summary:', error);
-      // Fallback to test data on error
-      await get().fetchTestSymptomSummary();
+      console.error('Failed to fetch symptom summary:', error);
     }
-  },
-
-  // Fallback test data methods
-  fetchTestSymptomIntensity: async () => {
-    console.log('🔄 Using test data for symptom intensity');
-    const testData = {
-      dates: ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"],
-      symptoms: {
-        "headache": {
-          name: "headache",
-          data: [
-            { date: "2024-01-01", intensity: 5, occurrences: 1 },
-            { date: "2024-01-02", intensity: 7, occurrences: 2 },
-            { date: "2024-01-03", intensity: 3, occurrences: 1 },
-            { date: "2024-01-04", intensity: 4, occurrences: 1 },
-            { date: "2024-01-05", intensity: 6, occurrences: 1 }
-          ],
-          color: getSymptomColor("headache", 0)
-        },
-        "fever": {
-          name: "fever",
-          data: [
-            { date: "2024-01-01", intensity: 2, occurrences: 1 },
-            { date: "2024-01-02", intensity: 8, occurrences: 1 },
-            { date: "2024-01-03", intensity: 4, occurrences: 1 },
-            { date: "2024-01-04", intensity: 3, occurrences: 1 },
-            { date: "2024-01-05", intensity: 2, occurrences: 1 }
-          ],
-          color: getSymptomColor("fever", 1)
-        },
-        "fatigue": {
-          name: "fatigue",
-          data: [
-            { date: "2024-01-01", intensity: 6, occurrences: 1 },
-            { date: "2024-01-02", intensity: 5, occurrences: 1 },
-            { date: "2024-01-03", intensity: 4, occurrences: 1 },
-            { date: "2024-01-04", intensity: 3, occurrences: 1 },
-            { date: "2024-01-05", intensity: 7, occurrences: 1 }
-          ],
-          color: getSymptomColor("fatigue", 2)
-        }
-      },
-      overall_trend: [
-        { date: "2024-01-01", average_intensity: 4.33 },
-        { date: "2024-01-02", average_intensity: 6.67 },
-        { date: "2024-01-03", average_intensity: 3.67 },
-        { date: "2024-01-04", average_intensity: 3.33 },
-        { date: "2024-01-05", average_intensity: 5.0 }
-      ]
-    };
-
-    set(state => ({
-      data: {
-        ...state.data,
-        symptomIntensity: testData
-      }
-    }));
-  },
-
-  fetchTestSymptomFrequency: async () => {
-    console.log('🔄 Using test data for symptom frequency');
-    const testData = [
-      {
-        symptom: "headache",
-        frequency: 5,
-        percentage: 38.5,
-        color: getSymptomColor("headache", 0),
-        last_occurrence: new Date().toISOString()
-      },
-      {
-        symptom: "fever",
-        frequency: 4,
-        percentage: 30.8,
-        color: getSymptomColor("fever", 1),
-        last_occurrence: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        symptom: "fatigue",
-        frequency: 4,
-        percentage: 30.8,
-        color: getSymptomColor("fatigue", 2),
-        last_occurrence: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-
-    set(state => ({
-      data: {
-        ...state.data,
-        symptomFrequency: testData
-      }
-    }));
-  },
-
-  fetchTestSymptomSummary: async () => {
-    console.log('🔄 Using test data for symptom summary');
-    const testSummary = {
-      total_symptoms_recorded: 13,
-      most_frequent_symptom: "headache",
-      most_frequent_count: 5,
-      highest_intensity_symptom: "fever",
-      highest_intensity_value: 8
-    };
-
-    set(state => ({
-      data: {
-        ...state.data,
-        summary: testSummary
-      }
-    }));
   },
 
   setTimeRange: (intensityDays: number, frequencyMonths: number) => {
