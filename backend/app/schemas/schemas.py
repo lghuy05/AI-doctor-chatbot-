@@ -226,7 +226,6 @@ class ReminderBase(BaseModel):
 
 
 class ReminderCreate(ReminderBase):
-    user_id: int
     source: str = Field(default="manual", description="manual, ai_suggestion")
     ai_suggestion_context: Optional[str] = None
 

@@ -494,7 +494,62 @@ export const chatStyles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-
+  // Add to chatStyles.ts - ENHANCED REMINDER POPUP STYLES
+  timeSelectionContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  timeSelectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  timeInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  timeInputText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  dayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    margin: 2,
+  },
+  dayButtonActive: {
+    backgroundColor: '#3B82F6',
+  },
+  dayButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  dayButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  frequencyText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
 });
 
 

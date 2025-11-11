@@ -27,9 +27,7 @@ def create_reminder(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new reminder"""
-    # Ensure the user_id matches the current user
-    reminder_data.user_id = current_user.id
-    return ReminderService.create_reminder(db, reminder_data)
+    return ReminderService.create_reminder(db, current_user.id, reminder_data)
 
 
 @router.put("/reminders/{reminder_id}", response_model=ReminderResponse)

@@ -1,5 +1,5 @@
-// styles/remindersStyles.ts
-import { StyleSheet } from 'react-native';
+// styles/remindersStyles.ts - COMPLETE FIXED VERSION
+import { StyleSheet, Platform } from 'react-native';
 
 export const remindersStyles = StyleSheet.create({
   container: {
@@ -86,21 +86,28 @@ export const remindersStyles = StyleSheet.create({
     color: '#0F131A',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    marginBottom: 12,
   },
   addButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   addButtonDisabled: {
     backgroundColor: '#9CA3AF',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
   },
   inputHint: {
     fontSize: 12,
@@ -218,7 +225,6 @@ export const remindersStyles = StyleSheet.create({
     fontFamily: 'monospace',
     lineHeight: 18,
   },
-  // Add to remindersStyles.ts
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -244,6 +250,7 @@ export const remindersStyles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 10,
     marginBottom: 5,
+    color: '#374151',
   },
   toggleRow: {
     flexDirection: 'row',
@@ -343,7 +350,6 @@ export const remindersStyles = StyleSheet.create({
   timePicker: {
     marginVertical: 10,
   },
-  // Add to remindersStyles.ts
   menuButton: {
     width: 40,
     height: 40,
@@ -361,24 +367,6 @@ export const remindersStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#3B82F6',
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 20,
-    backgroundColor: '#3B82F6',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  addButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
   },
   reminderItemCompleted: {
     opacity: 0.6,
@@ -428,5 +416,51 @@ export const remindersStyles = StyleSheet.create({
   toggleTextActive: {
     color: 'white',
   },
-
+  // NEW STYLES FOR TIME PICKER FIX
+  timeInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  timeInputText: {
+    fontSize: 16,
+    color: '#0F131A',
+    fontWeight: '500',
+  },
+  selectedDaysText: {
+    fontSize: 12,
+    color: '#3B82F6',
+    fontStyle: 'italic',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  timePickerContainer: {
+    marginBottom: 12,
+    backgroundColor: Platform.OS === 'ios' ? '#f8f9fa' : 'transparent',
+    borderRadius: Platform.OS === 'ios' ? 8 : 0,
+    overflow: Platform.OS === 'ios' ? 'hidden' : 'visible',
+  },
+  timePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 10,
+    backgroundColor: '#f8f9fa',
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
+  },
+  timePickerButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: '#3B82F6',
+    borderRadius: 6,
+  },
+  timePickerButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
+  },
 });

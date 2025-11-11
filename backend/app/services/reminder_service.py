@@ -8,11 +8,15 @@ from app.schemas.schemas import ReminderCreate, ReminderUpdate
 
 class ReminderService:
     @staticmethod
-    def create_reminder(db: Session, reminder_data: ReminderCreate) -> Reminder:
+    def create_reminder(
+        db: Session, user_id: int, reminder_data: ReminderCreate
+    ) -> Reminder:
         """Create a new reminder"""
         try:
+            reminder_dict = reminder_data.dict()
+            reminder_dict["user_id"] = user_id
             # Convert days_of_week to PostgreSQL array format if needed
-            db_reminder = Reminder(**reminder_data.dict())
+            db_reminder = Reminder(**reminder_dict)
             db.add(db_reminder)
             db.commit()
             db.refresh(db_reminder)
