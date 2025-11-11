@@ -155,3 +155,53 @@ def get_symptom_summary(
             "error": str(e),
             "summary": {},
         }  # FIXED: Added missing closing bracket
+
+
+@router.get("/analytics/debug-timezone")
+def debug_timezone(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """Debug endpoint to check timezone issues"""
+    try:
+        # Check database timezone
+        SymptomTrackingService.debug_database_timezone(db)
+
+        # Check recent symptoms with timestamps
+        query = text("""
+            SELECT 
+                symptom_name,
+                created_at,
+                created_at AT TIME ZONE 'UTC' as utc_time,
+                created_at AT TIME ZONE 'US/Eastern' as tampa_time,
+                DATE(created_at) as date_only,
+                DATE(created_at AT TIME ZONE 'US/Eastern') as tampa_date
+            FROM symptom_intensity 
+            WHERE user_id = :user_id
+            ORDER BY created_at DESC
+            LIMIT 5
+        """)
+        result = db.execute(query, {"user_id": current_user.id})
+        rows = result.fetchall()
+
+        debug_data = []
+        for row in rows:
+            debug_data.append(
+                {
+                    "symptom": row.symptom_name,
+                    "created_at_raw": str(row.created_at),
+                    "as_utc": str(row.utc_time),
+                    "as_tampa": str(row.tampa_time),
+                    "date_only": str(row.date_only),
+                    "tampa_date": str(row.tampa_date),
+                }
+            )
+
+        return {
+            "success": True,
+            "system_time": str(datetime.now()),
+            "tampa_time": str(SymptomTrackingService.get_local_time()),
+            "stored_records": debug_data,
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
