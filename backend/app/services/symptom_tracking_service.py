@@ -43,12 +43,11 @@ class SymptomTrackingService:
                 duration_minutes = 1
 
             # DEBUG: Check what time we're sending to database
-            current_timestamp = datetime.now()
+            current_timestamp = SymptomTrackingService.get_local_time()
+
             print("🔍 DEBUG - BEFORE DATABASE INSERT:")
-            print(f"  Python datetime.now(): {current_timestamp}")
-            print(
-                f"  Tampa time (get_local_time): {SymptomTrackingService.get_local_time()}"
-            )
+            print(f"  Python datetime.now(): {datetime.now()}")
+            print(f"  Tampa time (get_local_time): {current_timestamp}")
             print(f"  UTC time: {datetime.now(timezone.utc)}")
 
             # Insert into symptom_intensity table
@@ -91,6 +90,7 @@ class SymptomTrackingService:
 
             print("🔍 DEBUG - AFTER DATABASE INSERT:")
             if debug_row:
+                print(f"Stored to db: {current_timestamp}")
                 print(f"  Stored created_at: {debug_row.created_at}")
                 print(f"  As UTC: {debug_row.utc_time}")
                 print(f"  As Tampa time: {debug_row.tampa_time}")
