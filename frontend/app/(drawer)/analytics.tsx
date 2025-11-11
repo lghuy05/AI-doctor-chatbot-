@@ -69,19 +69,19 @@ export default function AnalyticsScreen() {
 
       console.log(`📈 Processing ${symptomName}:`, symptom.data);
 
-      // Transform data to match gifted charts format
+      // FIXED: Better date formatting to show all dates
       const lineData = symptom.data.map((point, index) => {
         // Format date for display (e.g., "Nov 06")
         const date = new Date(point.date);
-        const day = date.getDate();
+        const day = date.getDate().toString().padStart(2, '0');
         const month = date.toLocaleString('default', { month: 'short' });
         const formattedDate = `${month} ${day}`;
 
         return {
           value: point.intensity,
-          label: index === 0 || index === symptom.data.length - 1 ? formattedDate : '', // Show first and last labels
+          label: formattedDate, // FIXED: Show ALL dates, not just first/last
           dataPointText: point.intensity.toString(),
-          labelTextStyle: { color: 'gray', fontSize: 10 },
+          labelTextStyle: { color: 'gray', fontSize: 9 }, // FIXED: Smaller font to fit more labels
         };
       });
 

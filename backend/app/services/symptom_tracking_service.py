@@ -71,9 +71,8 @@ class SymptomTrackingService:
     def get_symptom_intensity_history(
         db: Session, user_id: int, days: int = 30
     ) -> List:
-        """Get symptom intensity history for charts - FIXED SQL QUERY"""
+        """Get symptom intensity history for charts - FIXED DATE RANGE"""
         try:
-            # FIXED: Removed individual intensity from SELECT since we're using AVG
             query = text("""
                 SELECT 
                     symptom_name,
@@ -83,13 +82,21 @@ class SymptomTrackingService:
                     AVG(duration_minutes) as avg_duration
                 FROM symptom_intensity 
                 WHERE user_id = :user_id 
-                AND reported_at >= CURRENT_DATE - INTERVAL ':days days'
+                AND reported_at >= (CURRENT_DATE - INTERVAL ':days days')::date
                 GROUP BY symptom_name, DATE(reported_at)
                 ORDER BY date ASC, symptom_name
             """)
             result = db.execute(query, {"user_id": user_id, "days": days})
             rows = result.fetchall()
             print(f"📊 Fetched {len(rows)} intensity records for user {user_id}")
+
+            # FIXED: Added debug logging to see actual dates returned
+            print("📅 DATES BEING RETURNED FROM DATABASE:")
+            for row in rows:
+                print(
+                    f"  - {row.date}: {row.symptom_name} (intensity: {row.daily_avg_intensity})"
+                )
+
             return rows
         except Exception as e:
             print(f"❌ Error fetching symptom history: {e}")

@@ -52,9 +52,9 @@ api.interceptors.response.use(
 
       setTimeout(() => {
         if (router.canGoBack()) {
-          router.replace('/login');
+          router.replace('/auth/login');
         } else {
-          router.navigate('/login');
+          router.navigate('/auth/login');
         }
       }, 100);
     }
