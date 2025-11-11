@@ -30,6 +30,7 @@ def get_symptom_intensity(
             return {
                 "success": True,
                 "data": {"dates": [], "symptoms": {}, "overall_trend": []},
+                "timezone": "US/Eastern",
             }
 
         # Simple transformation
@@ -93,6 +94,7 @@ def get_symptom_intensity(
                 "symptoms": symptoms_data,
                 "overall_trend": overall_trend,
             },
+            "timezone": "US/Eastern",
         }
 
     except Exception as e:
@@ -101,6 +103,7 @@ def get_symptom_intensity(
             "success": False,
             "error": str(e),
             "data": {"dates": [], "symptoms": {}, "overall_trend": []},
+            "timezone": "Eastern",
         }
 
 

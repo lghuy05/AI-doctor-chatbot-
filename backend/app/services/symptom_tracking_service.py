@@ -3,23 +3,53 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database.database import get_db
 from app.schemas.schemas import SymptomIntensityCreate
-from datetime import datetime, date
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict
+from zoneinfo import ZoneInfo
 
 
 class SymptomTrackingService:
+    TAMPA_TZ = ZoneInfo("US/Eastern")
+
+    @staticmethod
+    def get_local_time():
+        """Get current time in Tampa/EST timezone"""
+        return datetime.now(SymptomTrackingService.TAMPA_TZ)
+
+    @staticmethod
+    def utc_to_local(utc_dt):
+        """Convert UTC datetime to Tampa time"""
+        if utc_dt.tzinfo is None:
+            # If naive datetime, assume UTC
+            utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+        return utc_dt.astimezone(SymptomTrackingService.TAMPA_TZ)
+
+    @staticmethod
+    def local_to_utc(local_dt):
+        """Convert Tampa time to UTC"""
+        if local_dt.tzinfo is None:
+            # If naive datetime, assume it's Tampa time
+            local_dt = local_dt.replace(tzinfo=SymptomTrackingService.TAMPA_TZ)
+        return local_dt.astimezone(timezone.utc)
+
     @staticmethod
     def record_symptom_intensity(
         db: Session, intensity_data: SymptomIntensityCreate
     ) -> bool:
-        """Record symptom intensity for a patient - FIXED DURATION CONSTRAINT"""
+        """Record symptom intensity for a patient - WITH TIMEZONE HANDLING"""
         try:
-            # FIXED: Ensure duration_minutes is at least 1 to satisfy check constraint
             duration_minutes = intensity_data.duration_minutes or 1
             if duration_minutes < 1:
-                duration_minutes = 1  # Set minimum duration to 1 minute
+                duration_minutes = 1
 
+            # DEBUG: Check what time we're sending to database
             current_timestamp = datetime.now()
+            print("🔍 DEBUG - BEFORE DATABASE INSERT:")
+            print(f"  Python datetime.now(): {current_timestamp}")
+            print(
+                f"  Tampa time (get_local_time): {SymptomTrackingService.get_local_time()}"
+            )
+            print(f"  UTC time: {datetime.now(timezone.utc)}")
 
             # Insert into symptom_intensity table
             query = text("""
@@ -40,16 +70,45 @@ class SymptomTrackingService:
                 },
             )
 
+            # DEBUG: Query back the record we just inserted
+            debug_query = text("""
+                SELECT created_at, created_at AT TIME ZONE 'UTC' as utc_time, 
+                    created_at AT TIME ZONE 'US/Eastern' as tampa_time
+                FROM symptom_intensity 
+                WHERE user_id = :user_id AND symptom_name = :symptom_name
+                ORDER BY created_at DESC 
+                LIMIT 1
+            """)
+
+            debug_result = db.execute(
+                debug_query,
+                {
+                    "user_id": intensity_data.user_id,
+                    "symptom_name": intensity_data.symptom_name,
+                },
+            )
+            debug_row = debug_result.fetchone()
+
+            print("🔍 DEBUG - AFTER DATABASE INSERT:")
+            if debug_row:
+                print(f"  Stored created_at: {debug_row.created_at}")
+                print(f"  As UTC: {debug_row.utc_time}")
+                print(f"  As Tampa time: {debug_row.tampa_time}")
+            else:
+                print("  ❌ Could not retrieve inserted record")
+
             # Update symptom_frequency table
-            current_month = date.today().replace(day=1)
+            current_month = (
+                SymptomTrackingService.get_local_time().date().replace(day=1)
+            )
             freq_query = text("""
                 INSERT INTO symptom_frequency 
                 (user_id, symptom_name, month_year, occurrence_count, last_occurrence)
-                VALUES (:user_id, :symptom_name, :month_year, 1, NOW())
+                VALUES (:user_id, :symptom_name, :month_year, 1, :now)
                 ON CONFLICT (user_id, symptom_name, month_year) 
                 DO UPDATE SET 
                     occurrence_count = symptom_frequency.occurrence_count + 1,
-                    last_occurrence = NOW()
+                    last_occurrence = :now
             """)
             db.execute(
                 freq_query,
@@ -57,6 +116,7 @@ class SymptomTrackingService:
                     "user_id": intensity_data.user_id,
                     "symptom_name": intensity_data.symptom_name,
                     "month_year": current_month,
+                    "now": SymptomTrackingService.get_local_time(),
                 },
             )
 
@@ -75,64 +135,76 @@ class SymptomTrackingService:
     def get_symptom_intensity_history(
         db: Session, user_id: int, days: int = 30
     ) -> List:
-        """Get symptom intensity history for charts - FIXED DATE RANGE"""
+        """Get symptom intensity history for charts - WITH TIMEZONE HANDLING"""
         try:
+            # Calculate the start date in Tampa time
+            # tampa_now = SymptomTrackingService.get_local_time()
+            start_date = datetime.now() - timedelta(days=days)
+            start_date_utc = SymptomTrackingService.local_to_utc(start_date)
             query = text("""
                 SELECT 
                     symptom_name,
-                    DATE(created_at) as date,
+                    DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern') as date,
                     AVG(intensity) as daily_avg_intensity,
                     COUNT(*) as daily_occurrences,
                     AVG(duration_minutes) as avg_duration
                 FROM symptom_intensity 
                 WHERE user_id = :user_id 
-                AND reported_at >= (CURRENT_DATE - INTERVAL ':days days')
-                GROUP BY symptom_name, DATE(created_at)
+                AND created_at >= :start_date
+                GROUP BY symptom_name, DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern')
                 ORDER BY date ASC, symptom_name
             """)
-            result = db.execute(query, {"user_id": user_id, "days": days})
+            result = db.execute(
+                query, {"user_id": user_id, "start_date": start_date_utc}
+            )
             rows = result.fetchall()
             print(f"📊 Fetched {len(rows)} intensity records for user {user_id}")
 
-            # FIXED: Added debug logging to see actual dates returned
-            print("📅 DATES BEING RETURNED FROM DATABASE:")
+            print("📅 DATES BEING RETURNED FROM DATABASE (Tampa Time):")
             for row in rows:
                 print(
                     f"  - {row.date}: {row.symptom_name} (intensity: {row.daily_avg_intensity})"
                 )
 
-            return rows
+            return rows  # No need for conversion now since we did it in SQL
         except Exception as e:
             print(f"❌ Error fetching symptom history: {e}")
-            # Return empty list instead of mock data for production
             return []
 
     @staticmethod
     def get_symptom_frequency(db: Session, user_id: int, months: int = 6) -> List:
-        """Get symptom frequency for pie chart - FIXED QUERY"""
+        """Get symptom frequency for pie chart - WITH TIMEZONE HANDLING"""
         try:
+            # Calculate start month in Tampa time but convert to UTC for query
+            tampa_now = SymptomTrackingService.get_local_time()
+            start_month = (tampa_now - timedelta(days=30 * months)).replace(day=1)
+            start_month_utc = SymptomTrackingService.local_to_utc(start_month)
+
             query = text("""
                 SELECT 
                     symptom_name,
                     SUM(occurrence_count) as total_occurrences,
-                    MAX(last_occurrence) as last_occurrence
+                    MAX(last_occurrence AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern') as last_occurrence
                 FROM symptom_frequency 
                 WHERE user_id = :user_id
-                AND month_year >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL ':months months')
+                AND month_year >= :start_month
                 GROUP BY symptom_name
                 ORDER BY total_occurrences DESC
             """)
-            result = db.execute(query, {"user_id": user_id, "months": months})
+            result = db.execute(
+                query, {"user_id": user_id, "start_month": start_month_utc}
+            )
             rows = result.fetchall()
+
             print(f"📊 Fetched {len(rows)} frequency records for user {user_id}")
-            return rows
+            return rows  # No conversion needed - SQL handled it
         except Exception as e:
             print(f"❌ Error fetching symptom frequency: {e}")
             return []
 
     @staticmethod
     def get_recent_symptoms(db: Session, user_id: int, limit: int = 10) -> List:
-        """Get recent symptoms for timeline view"""
+        """Get recent symptoms for timeline view - WITH TIMEZONE HANDLING"""
         try:
             query = text("""
                 SELECT 
@@ -140,14 +212,15 @@ class SymptomTrackingService:
                     intensity,
                     duration_minutes,
                     notes,
-                    reported_at
+                    created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern' as created_at
                 FROM symptom_intensity 
                 WHERE user_id = :user_id
-                ORDER BY reported_at DESC
+                ORDER BY created_at DESC
                 LIMIT :limit
             """)
             result = db.execute(query, {"user_id": user_id, "limit": limit})
-            return result.fetchall()
+            rows = result.fetchall()
+            return rows  # No conversion needed - SQL handled it
         except Exception as e:
             print(f"❌ Error fetching recent symptoms: {e}")
             return []
