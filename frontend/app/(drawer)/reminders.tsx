@@ -1,4 +1,4 @@
-// app/(drawer)/reminders.tsx - COMPLETE FIXED VERSION
+// app/(drawer)/reminders.tsx - SIMPLIFIED TIME INPUT VERSION
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   Alert, Modal, ActivityIndicator, Platform
@@ -7,7 +7,6 @@ import { useNavigation } from 'expo-router';
 import { remindersStyles } from '../styles/remindersStyles';
 import { useState, useEffect } from 'react';
 import api from '../../api/client';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface Reminder {
   id: string;
@@ -40,8 +39,7 @@ export default function RemindersScreen() {
   const [newDescription, setNewDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedTime, setSelectedTime] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTime, setSelectedTime] = useState('08:00'); // Default time
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [isRecurring, setIsRecurring] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<AIReminderSuggestion[]>([]);
@@ -79,9 +77,17 @@ export default function RemindersScreen() {
   const createReminder = async (reminderData?: Partial<Reminder>) => {
     setIsLoading(true);
     try {
-      const timeString = selectedTime.toTimeString().split(' ')[0];
-      const [hours, minutes, seconds] = timeString.split(':');
-      const backendTimeFormat = `${hours}:${minutes}:${seconds}.000Z`;
+      // Validate time format
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(selectedTime)) {
+        Alert.alert('Error', 'Please enter a valid time in HH:MM format (e.g., 14:30)');
+        setIsLoading(false);
+        return;
+      }
+
+      // Convert time to backend format
+      const [hours, minutes] = selectedTime.split(':');
+      const backendTimeFormat = `${hours}:${minutes}:00.000Z`;
 
       console.log('🔄 Creating reminder with time:', backendTimeFormat);
 
@@ -96,7 +102,6 @@ export default function RemindersScreen() {
         recurrence_pattern: isRecurring ? (selectedDays.length > 0 ? 'weekly' : 'daily') : 'none',
         source: 'manual',
         is_active: true
-        // REMOVED: user_id: 1 - backend handles this automatically
       };
 
       console.log('📤 Sending reminder payload:', payload);
@@ -104,9 +109,30 @@ export default function RemindersScreen() {
       const response = await api.post('/reminders', payload);
       console.log('✅ Reminder created successfully:', response.data);
 
-      // Reset form and refresh...
+      // Reset form and refresh
+      setShowAddModal(false);
+      resetForm();
+      await fetchReminders();
+      Alert.alert('Success', 'Reminder created successfully!');
+
     } catch (error: any) {
-      // Error handling...
+      console.error('❌ Error creating reminder:', error);
+
+      // Enhanced error logging
+      if (error.response?.data?.detail) {
+        console.error('📋 Backend validation errors:', error.response.data.detail);
+        const validationErrors = error.response.data.detail;
+        if (Array.isArray(validationErrors)) {
+          const errorMessages = validationErrors.map((err: any) =>
+            `${err.loc?.join('.')}: ${err.msg}`
+          ).join('\n\n');
+          Alert.alert('Validation Error', errorMessages);
+        } else {
+          Alert.alert('Error', JSON.stringify(validationErrors, null, 2));
+        }
+      } else {
+        Alert.alert('Error', `Failed to create reminder: ${error.response?.data?.message || error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -155,27 +181,20 @@ export default function RemindersScreen() {
     );
   };
 
-  const handleTimeChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowTimePicker(false);
-    }
-
-    if (selectedDate) {
-      setSelectedTime(selectedDate);
-      // On iOS, we keep the picker open until user taps Done
-    }
+  const handleTimeChange = (text: string) => {
+    setSelectedTime(text);
   };
 
-  const showTimePickerModal = () => {
-    setShowTimePicker(true);
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
+  const formatTimeDisplay = (timeString: string) => {
+    try {
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const formattedHour = hour % 12 || 12;
+      return `${formattedHour}:${minutes} ${ampm}`;
+    } catch (error) {
+      return timeString;
+    }
   };
 
   const handleAiSuggestionSelect = (suggestion: AIReminderSuggestion) => {
@@ -206,10 +225,9 @@ export default function RemindersScreen() {
   const resetForm = () => {
     setNewReminder('');
     setNewDescription('');
-    setSelectedTime(new Date());
+    setSelectedTime('08:00');
     setSelectedDays([]);
     setIsRecurring(false);
-    setShowTimePicker(false);
   };
 
   useEffect(() => {
@@ -240,7 +258,7 @@ export default function RemindersScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Add Reminder Modal - FIXED */}
+      {/* Add Reminder Modal - SIMPLIFIED TIME INPUT */}
       <Modal
         visible={showAddModal}
         animationType="slide"
@@ -269,37 +287,19 @@ export default function RemindersScreen() {
               numberOfLines={3}
             />
 
-            <Text style={remindersStyles.label}>Time:</Text>
-            <TouchableOpacity
-              style={remindersStyles.timeInput}
-              onPress={showTimePickerModal}
-            >
-              <Text style={remindersStyles.timeInputText}>
-                {formatTime(selectedTime)}
-              </Text>
-            </TouchableOpacity>
-
-            {showTimePicker && (
-              <View style={remindersStyles.timePickerContainer}>
-                <DateTimePicker
-                  value={selectedTime}
-                  mode="time"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={handleTimeChange}
-                  style={remindersStyles.timePicker}
-                />
-                {Platform.OS === 'ios' && (
-                  <View style={remindersStyles.timePickerActions}>
-                    <TouchableOpacity
-                      style={remindersStyles.timePickerButton}
-                      onPress={() => setShowTimePicker(false)}
-                    >
-                      <Text style={remindersStyles.timePickerButtonText}>Done</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            )}
+            {/* SIMPLIFIED TIME INPUT - JUST LIKE CHAT PAGE */}
+            <Text style={remindersStyles.label}>Time (24-hour format):</Text>
+            <TextInput
+              style={remindersStyles.input}
+              value={selectedTime}
+              onChangeText={handleTimeChange}
+              placeholder="08:00"
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+            />
+            <Text style={remindersStyles.selectedDaysText}>
+              Display: {formatTimeDisplay(selectedTime)}
+            </Text>
 
             <View style={remindersStyles.toggleRow}>
               <Text style={remindersStyles.label}>Recurring:</Text>
@@ -453,7 +453,7 @@ export default function RemindersScreen() {
                   )}
                   <View style={remindersStyles.reminderDetails}>
                     <Text style={remindersStyles.reminderTime}>
-                      🕒 {reminder.scheduled_time}
+                      🕒 {formatTimeDisplay(reminder.scheduled_time)}
                     </Text>
                     {reminder.is_recurring && reminder.days_of_week.length > 0 && (
                       <Text style={remindersStyles.reminderDays}>
