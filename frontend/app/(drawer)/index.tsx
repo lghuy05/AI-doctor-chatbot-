@@ -1,9 +1,9 @@
-// app/(drawer)/index.tsx - UPDATED WITH CHAT PERSISTENCE
+// app/(drawer)/index.tsx - UPDATED WITH REMINDER POPUP
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, SafeAreaView,
-  ActivityIndicator, ScrollView, Alert
+  ActivityIndicator, ScrollView, Alert, Modal
 } from 'react-native';
 import { router, useNavigation } from 'expo-router';
 import { chatStyles } from '../styles/chatStyles';
@@ -11,9 +11,19 @@ import api from '../../api/client';
 import { usePatientStore } from '../../hooks/usePatientStore';
 import { useChatStore, ChatMessage } from '../../hooks/useChatStore';
 
+interface AIReminderSuggestion {
+  reminder_title: string;
+  reminder_description: string;
+  suggested_time: string;
+  suggested_frequency: string;
+  priority: string;
+}
+
 export default function ChatIntroScreen() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showReminderPopup, setShowReminderPopup] = useState(false);
+  const [aiReminderSuggestions, setAiReminderSuggestions] = useState<AIReminderSuggestion[]>([]);
 
   // Use chat store for persistence
   const {
@@ -110,6 +120,13 @@ export default function ChatIntroScreen() {
       // Save to persistent store
       addMessage(text, adviceResponse.data, text, patientContext);
 
+      // Check for AI reminder suggestions
+      if (adviceResponse.data.ai_reminder_suggestions &&
+        adviceResponse.data.ai_reminder_suggestions.length > 0) {
+        setAiReminderSuggestions(adviceResponse.data.ai_reminder_suggestions);
+        setShowReminderPopup(true);
+      }
+
       setMessage('');
 
     } catch (error: any) {
@@ -132,6 +149,67 @@ export default function ChatIntroScreen() {
     } finally {
       setLoading(false);
       setMessage('');
+    }
+  };
+
+  const handleAddReminder = async (suggestion: AIReminderSuggestion) => {
+    try {
+      const reminderData = {
+        title: suggestion.reminder_title,
+        description: suggestion.reminder_description,
+        reminder_type: 'ai_suggestion',
+        scheduled_time: suggestion.suggested_time,
+        scheduled_date: new Date().toISOString().split('T')[0],
+        days_of_week: suggestion.suggested_frequency === 'daily' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : [],
+        is_recurring: suggestion.suggested_frequency !== 'once',
+        recurrence_pattern: suggestion.suggested_frequency === 'daily' ? 'daily' : 'weekly',
+        source: 'ai_suggestion',
+        ai_suggestion_context: `AI suggested based on symptoms: ${message}`
+      };
+
+      await api.post('/reminders', reminderData);
+      Alert.alert('Success', 'Reminder added to your list!');
+
+      // Remove the added suggestion from the list
+      setAiReminderSuggestions(prev =>
+        prev.filter(s => s.reminder_title !== suggestion.reminder_title)
+      );
+
+      // Close popup if no more suggestions
+      if (aiReminderSuggestions.length === 1) {
+        setShowReminderPopup(false);
+      }
+    } catch (error) {
+      console.error('Error adding reminder:', error);
+      Alert.alert('Error', 'Failed to add reminder');
+    }
+  };
+
+  const handleAddAllReminders = async () => {
+    try {
+      for (const suggestion of aiReminderSuggestions) {
+        const reminderData = {
+          title: suggestion.reminder_title,
+          description: suggestion.reminder_description,
+          reminder_type: 'ai_suggestion',
+          scheduled_time: suggestion.suggested_time,
+          scheduled_date: new Date().toISOString().split('T')[0],
+          days_of_week: suggestion.suggested_frequency === 'daily' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : [],
+          is_recurring: suggestion.suggested_frequency !== 'once',
+          recurrence_pattern: suggestion.suggested_frequency === 'daily' ? 'daily' : 'weekly',
+          source: 'ai_suggestion',
+          ai_suggestion_context: `AI suggested based on symptoms: ${message}`
+        };
+
+        await api.post('/reminders', reminderData);
+      }
+
+      Alert.alert('Success', 'All reminders added to your list!');
+      setShowReminderPopup(false);
+      setAiReminderSuggestions([]);
+    } catch (error) {
+      console.error('Error adding reminders:', error);
+      Alert.alert('Error', 'Failed to add some reminders');
     }
   };
 
@@ -258,6 +336,64 @@ export default function ChatIntroScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* AI Reminder Suggestions Popup */}
+        <Modal
+          visible={showReminderPopup}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowReminderPopup(false)}
+        >
+          <View style={chatStyles.reminderPopup}>
+            <View style={chatStyles.reminderPopupContent}>
+              <Text style={chatStyles.reminderPopupTitle}>
+                💡 AI Reminder Suggestions
+              </Text>
+              <Text style={chatStyles.reminderPopupSubtitle}>
+                Based on your symptoms, here are some helpful reminders:
+              </Text>
+
+              <ScrollView style={chatStyles.reminderSuggestionsList}>
+                {aiReminderSuggestions.map((suggestion, index) => (
+                  <View key={index} style={chatStyles.reminderSuggestionItem}>
+                    <View style={chatStyles.reminderSuggestionContent}>
+                      <Text style={chatStyles.reminderSuggestionTitle}>
+                        {suggestion.reminder_title}
+                      </Text>
+                      <Text style={chatStyles.reminderSuggestionDesc}>
+                        {suggestion.reminder_description}
+                      </Text>
+                      <Text style={chatStyles.reminderSuggestionTime}>
+                        ⏰ {suggestion.suggested_time} • {suggestion.suggested_frequency}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={chatStyles.reminderAddButton}
+                      onPress={() => handleAddReminder(suggestion)}
+                    >
+                      <Text style={chatStyles.reminderAddButtonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+
+              <View style={chatStyles.reminderPopupActions}>
+                <TouchableOpacity
+                  style={[chatStyles.reminderPopupButton, chatStyles.reminderPopupButtonSecondary]}
+                  onPress={() => setShowReminderPopup(false)}
+                >
+                  <Text style={chatStyles.reminderPopupButtonTextSecondary}>Skip All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={chatStyles.reminderPopupButton}
+                  onPress={handleAddAllReminders}
+                >
+                  <Text style={chatStyles.reminderPopupButtonText}>Add All</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

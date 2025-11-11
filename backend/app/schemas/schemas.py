@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, EmailStr
 from typing import List, Literal, Optional, Dict
 
 # from app.database.database import Base
-from datetime import datetime, date
+from datetime import datetime, date, time
 # from decimal import Decimal
 
 # ------------------------------------------------------
@@ -207,3 +207,63 @@ class RecentSymptomResponse(BaseModel):
     duration_minutes: Optional[int]
     notes: Optional[str]
     reported_at: datetime
+
+
+class ReminderBase(BaseModel):
+    title: str = Field(..., max_length=255)
+    description: Optional[str] = None
+    reminder_type: str = Field(
+        default="custom", description="medication, exercise, appointment, custom"
+    )
+    scheduled_time: time
+    scheduled_date: Optional[date] = None
+    days_of_week: List[str] = Field(default_factory=list)
+    is_recurring: bool = False
+    recurrence_pattern: str = Field(
+        default="daily", description="daily, weekly, monthly"
+    )
+    is_active: bool = True
+
+
+class ReminderCreate(ReminderBase):
+    user_id: int
+    source: str = Field(default="manual", description="manual, ai_suggestion")
+    ai_suggestion_context: Optional[str] = None
+
+
+class ReminderUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    scheduled_time: Optional[time] = None
+    scheduled_date: Optional[date] = None
+    days_of_week: Optional[List[str]] = None
+    is_recurring: Optional[bool] = None
+    recurrence_pattern: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_completed: Optional[bool] = None
+
+
+class ReminderResponse(ReminderBase):
+    id: int
+    user_id: int
+    source: str
+    ai_suggestion_context: Optional[str]
+    is_completed: bool
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class AIReminderSuggestion(BaseModel):
+    reminder_title: str
+    reminder_description: str
+    suggested_time: str  # e.g., "08:00", "after_meal", "morning"
+    suggested_frequency: str  # e.g., "daily", "weekly", "once"
+    priority: Literal["low", "medium", "high"] = "medium"
+
+
+class EnhancedAdviceOutWithReminders(EnhancedAdviceOut):
+    ai_reminder_suggestions: List[AIReminderSuggestion] = []

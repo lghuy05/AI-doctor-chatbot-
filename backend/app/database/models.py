@@ -1,8 +1,20 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Text,
+    ForeignKey,
+    ARRAY,
+    Boolean,
+    Time,
+    Date,
+)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
-from datetime import time
+from datetime import time, datetime
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 
 
 class User(Base):
@@ -55,3 +67,27 @@ class SymptomFrequency(Base):
 
     # Relationship to User
     user = relationship("User")
+
+
+class Reminder(Base):
+    __tablename__ = "reminders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    reminder_type = Column(String(50), default="custom")
+    scheduled_time = Column(Time, nullable=False)
+    scheduled_date = Column(Date)
+    days_of_week = Column(PG_ARRAY(String(20)), default=[])
+    is_recurring = Column(Boolean, default=False)
+    recurrence_pattern = Column(String(20), default="daily")
+    is_active = Column(Boolean, default=True)
+    is_completed = Column(Boolean, default=False)
+    source = Column(String(50), default="manual")
+    ai_suggestion_context = Column(Text)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    completed_at = Column(DateTime(timezone=True))

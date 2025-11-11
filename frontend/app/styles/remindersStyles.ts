@@ -218,4 +218,128 @@ export const remindersStyles = StyleSheet.create({
     fontFamily: 'monospace',
     lineHeight: 18,
   },
+  // Add to remindersStyles.ts
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    margin: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  toggle: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 15,
+    backgroundColor: '#e5e7eb',
+  },
+  toggleActive: {
+    backgroundColor: '#3B82F6',
+  },
+  toggleText: {
+    fontWeight: 'bold',
+    color: '#6b7280',
+  },
+  toggleActiveText: {
+    color: 'white',
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginVertical: 10,
+  },
+  dayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#f3f4f6',
+    margin: 3,
+  },
+  dayButtonActive: {
+    backgroundColor: '#3B82F6',
+  },
+  dayButtonText: {
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  dayButtonTextActive: {
+    color: 'white',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#f3f4f6',
+  },
+  saveButton: {
+    backgroundColor: '#3B82F6',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  suggestionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  suggestionDescription: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 10,
+  },
+  suggestionTime: {
+    fontSize: 14,
+    color: '#3B82F6',
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  suggestionFrequency: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 15,
+  },
+
+
 });

@@ -122,7 +122,6 @@ if EHR_ENABLED:
     except ImportError as e:
         print(f"Failed to import EHR: {e}")
 
-# Add analytics routes
 analytics_succeed = False
 try:
     from app.routes.analytics import router as analytics_router
@@ -132,6 +131,14 @@ try:
     analytics_succeed = True
 except ImportError as e:
     print(f"Analytics routes not available: {e}")
+
+try:
+    from app.routes.reminders import router as reminders_router
+
+    app.include_router(reminders_router)
+    print("✅ Reminder routes registered")
+except ImportError as e:
+    print(f"Reminder routes not available: {e}")
 
 
 @app.get("/")

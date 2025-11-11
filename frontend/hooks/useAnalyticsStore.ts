@@ -1,4 +1,4 @@
-// hooks/useAnalyticsStore.ts - CLEANED VERSION
+// hooks/useAnalyticsStore.ts - UPDATED WITH AUTO-REFRESH
 import { create } from 'zustand';
 import api from '../api/client';
 
@@ -47,6 +47,8 @@ interface AnalyticsStore {
     intensityDays: number;
     frequencyMonths: number;
   };
+  lastDataUpdate: string | null;
+  autoRefresh: boolean;
 
   // Actions
   fetchAnalyticsData: () => Promise<void>;
@@ -54,6 +56,10 @@ interface AnalyticsStore {
   fetchSymptomFrequency: (months?: number) => Promise<void>;
   fetchSymptomSummary: () => Promise<void>;
   setTimeRange: (intensityDays: number, frequencyMonths: number) => void;
+  setLastDataUpdate: (timestamp: string) => void;
+  checkForUpdates: () => Promise<void>;
+  enableAutoRefresh: () => void;
+  disableAutoRefresh: () => void;
   clearError: () => void;
 }
 
@@ -106,6 +112,8 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
     intensityDays: 30,
     frequencyMonths: 6
   },
+  lastDataUpdate: null,
+  autoRefresh: true,
 
   fetchAnalyticsData: async () => {
     const { timeRange, fetchSymptomIntensity, fetchSymptomFrequency, fetchSymptomSummary } = get();
@@ -124,7 +132,8 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
         data: {
           ...get().data,
           lastUpdated: new Date().toISOString()
-        }
+        },
+        lastDataUpdate: new Date().toISOString()
       });
 
     } catch (error: any) {
@@ -220,6 +229,33 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
     setTimeout(() => {
       get().fetchAnalyticsData();
     }, 100);
+  },
+
+  setLastDataUpdate: (timestamp: string) => {
+    set({ lastDataUpdate: timestamp });
+  },
+
+  checkForUpdates: async () => {
+    const { lastDataUpdate, fetchAnalyticsData, autoRefresh } = get();
+
+    if (!autoRefresh) return;
+
+    try {
+      // Check if we should refresh based on time elapsed
+      if (!lastDataUpdate || Date.now() - new Date(lastDataUpdate).getTime() > 30000) { // 30 seconds
+        await fetchAnalyticsData();
+      }
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+    }
+  },
+
+  enableAutoRefresh: () => {
+    set({ autoRefresh: true });
+  },
+
+  disableAutoRefresh: () => {
+    set({ autoRefresh: false });
   },
 
   clearError: () => set({ error: null })

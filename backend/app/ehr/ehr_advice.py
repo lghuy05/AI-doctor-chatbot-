@@ -63,8 +63,9 @@ def enhanced_advice_with_ehr(
             "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
             "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty', 'persistent', 'constant', 'intermittent' to determine intensity (1-10). "
             "Estimate duration in minutes based on time-related words like 'today','this morning','hours', 'days', 'weeks', 'constant', 'intermittent', 'few', 'several'. "
-            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, symptom_analysis. "
+            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, symptom_analysis, ai_reminder_suggestions[]. "
             "symptom_analysis should contain: intensities[] (each with symptom_name, intensity 1-10, duration_minutes, notes), and overall_severity (1-10)."
+            "ai_reminder_suggestions should contain reminders for the patient based on your advice. Each reminder should have: reminder_title, reminder_description, suggested_time, suggested_frequency, priority."
             "CRITICAL: The symptom_analysis MUST be generated based on the patient's description, not default values."
             "Example JSON format: "
             '{"advice":[{"step":"Hydration","details":"Small sips of water."}],'
@@ -75,9 +76,11 @@ def enhanced_advice_with_ehr(
             '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain described as severe"},'
             '{"symptom_name":"nausea","intensity":4,"duration_minutes":45,"notes":"Intermittent mild nausea"}'
             "],"
-            '"overall_severity":6}}'
+            '"overall_severity":6},'
+            '"ai_reminder_suggestions":['
+            '{"reminder_title":"Drink water","reminder_description":"Small sips every 30 minutes","suggested_time":"08:00","suggested_frequency":"daily","priority":"medium"}'
+            "]}"
         )
-
         ehr_text = ""
         if ehr_context and (
             ehr_context.get("ehr_medications") or ehr_context.get("ehr_conditions")

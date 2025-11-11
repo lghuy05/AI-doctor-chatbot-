@@ -1,8 +1,8 @@
-// app/(drawer)/analytics.tsx - CLEANED AND FIXED VERSION
+// app/(drawer)/analytics.tsx - UPDATED WITH AUTO-REFRESH
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, LogBox } from 'react-native';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useFocusEffect } from 'expo-router';
 import { analyticsStyles } from '../styles/analyticsStyles';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAnalyticsStore } from '../../hooks/useAnalyticsStore';
 import { LineChart, PieChart } from 'react-native-gifted-charts';
 
@@ -14,7 +14,10 @@ export default function AnalyticsScreen() {
     error,
     fetchAnalyticsData,
     timeRange,
-    setTimeRange
+    setTimeRange,
+    checkForUpdates,
+    enableAutoRefresh,
+    disableAutoRefresh
   } = useAnalyticsStore();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -30,6 +33,24 @@ export default function AnalyticsScreen() {
     // @ts-ignore
     navigation.toggleDrawer();
   };
+
+  // Auto-refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      enableAutoRefresh();
+      fetchAnalyticsData();
+
+      // Set up interval for auto-refresh
+      const interval = setInterval(() => {
+        checkForUpdates();
+      }, 30000); // Check every 30 seconds
+
+      return () => {
+        clearInterval(interval);
+        disableAutoRefresh();
+      };
+    }, [])
+  );
 
   useEffect(() => {
     loadAnalyticsData();
@@ -142,7 +163,7 @@ export default function AnalyticsScreen() {
           <Text style={analyticsStyles.title}>Health Analytics</Text>
           {data.lastUpdated && (
             <Text style={analyticsStyles.subtitle}>
-              Updated: {new Date(data.lastUpdated).toLocaleDateString()}
+              Updated: {new Date(data.lastUpdated).toLocaleTimeString()} (Auto-refresh enabled)
             </Text>
           )}
         </View>
