@@ -483,6 +483,17 @@ export const chatStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  clearButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  clearButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+    fontSize: 14,
+  },
 
 });
 

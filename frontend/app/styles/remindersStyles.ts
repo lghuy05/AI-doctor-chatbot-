@@ -340,6 +340,93 @@ export const remindersStyles = StyleSheet.create({
     color: '#6b7280',
     marginBottom: 15,
   },
-
+  timePicker: {
+    marginVertical: 10,
+  },
+  // Add to remindersStyles.ts
+  menuButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  reminderItemCompleted: {
+    opacity: 0.6,
+    backgroundColor: '#F8FAFC',
+  },
+  reminderTitleCompleted: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    textDecorationLine: 'line-through',
+  },
+  reminderDescription: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  reminderActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  completeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  completeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  toggleTextActive: {
+    color: 'white',
+  },
 
 });

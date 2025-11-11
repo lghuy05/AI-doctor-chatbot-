@@ -1,10 +1,24 @@
-// app/(drawer)/analytics.tsx - UPDATED WITH AUTO-REFRESH
+// app/(drawer)/analytics.tsx - FIXED VERSION
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, LogBox } from 'react-native';
 import { useNavigation, useFocusEffect } from 'expo-router';
 import { analyticsStyles } from '../styles/analyticsStyles';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAnalyticsStore } from '../../hooks/useAnalyticsStore';
 import { LineChart, PieChart } from 'react-native-gifted-charts';
+
+// Fix for gifted-charts hook order issue
+const StableLineChart = (props: any) => {
+  // Memoize the data to prevent unnecessary re-renders
+  const memoizedProps = useMemo(() => props, [JSON.stringify(props)]);
+
+  return <LineChart {...memoizedProps} />;
+};
+
+const StablePieChart = (props: any) => {
+  const memoizedProps = useMemo(() => props, [JSON.stringify(props)]);
+
+  return <PieChart {...memoizedProps} />;
+};
 
 export default function AnalyticsScreen() {
   const navigation = useNavigation();
@@ -25,7 +39,8 @@ export default function AnalyticsScreen() {
   useEffect(() => {
     LogBox.ignoreLogs([
       'onStartShouldSetResponder',
-      'Unknown event handler property'
+      'Unknown event handler property',
+      'React has detected a change in the order of Hooks'
     ]);
   }, []);
 
@@ -66,8 +81,8 @@ export default function AnalyticsScreen() {
     setRefreshing(false);
   };
 
-  // FIXED: Multiple symptoms in line chart with proper date formatting
-  const getLineChartData = () => {
+  // FIXED: Memoize line chart data to prevent hook order issues
+  const getLineChartData = useMemo(() => {
     const { symptoms, dates } = data.symptomIntensity;
 
     if (Object.keys(symptoms).length === 0) {
@@ -110,9 +125,10 @@ export default function AnalyticsScreen() {
     }).filter(Boolean);
 
     return dataSets;
-  };
+  }, [data.symptomIntensity]);
 
-  const getPieChartData = () => {
+  // FIXED: Memoize pie chart data
+  const getPieChartData = useMemo(() => {
     if (!data.symptomFrequency.length) return [];
 
     return data.symptomFrequency.slice(0, 5).map(item => ({
@@ -120,12 +136,99 @@ export default function AnalyticsScreen() {
       color: item.color,
       text: `${item.percentage.toFixed(0)}%`,
     }));
-  };
+  }, [data.symptomFrequency]);
 
-  const lineDataSets = getLineChartData();
-  const pieData = getPieChartData();
+  const lineDataSets = getLineChartData;
+  const pieData = getPieChartData;
   const hasLineData = lineDataSets.length > 0;
   const primaryLineData = lineDataSets[0]?.data || [];
+
+  // FIXED: Memoize chart configurations
+  const singleLineConfig = useMemo(() => ({
+    data: primaryLineData,
+    spacing: 50,
+    thickness: 3,
+    hideRules: false,
+    hideDataPoints: false,
+    color: lineDataSets[0]?.color || '#3B82F6',
+    yAxisColor: "#3B82F6",
+    xAxisColor: "#3B82F6",
+    dataPointsColor: lineDataSets[0]?.color || '#3B82F6',
+    dataPointsRadius: 6,
+    initialSpacing: 20,
+    endSpacing: 20,
+    height: 220,
+    yAxisOffset: 0,
+    noOfSections: 5,
+    maxValue: 10,
+    isAnimated: true,
+    animateOnDataChange: false,
+    animationDuration: 1000,
+    showVerticalLines: true,
+    verticalLinesColor: "rgba(59, 130, 246, 0.1)",
+    verticalLinesThickness: 1,
+    xAxisLabelTextStyle: { color: 'gray', fontSize: 10 },
+    yAxisTextStyle: { color: 'gray', fontSize: 12 },
+    areaChart: false,
+    curved: true,
+    curvature: 0.2,
+    strokeLinecap: "round",
+    focusEnabled: false,
+    showValuesAsDataPointsText: false,
+    yAxisLabelWidth: 40,
+    yAxisLabelPrefix: "",
+    yAxisLabelSuffix: "",
+    formatYLabel: (value: number) => `${Math.round(value)}`
+  }), [primaryLineData, lineDataSets[0]?.color]);
+
+  const multiLineConfig = useMemo(() => ({
+    dataSet: lineDataSets.map((dataset, index) => ({
+      data: dataset.data,
+      color: dataset.color,
+      thickness: 3,
+      curved: true,
+      hideDataPoints: false,
+      dataPointsColor: dataset.color,
+      dataPointsRadius: 4,
+    })),
+    spacing: 50,
+    hideRules: false,
+    yAxisColor: "#3B82F6",
+    xAxisColor: "#3B82F6",
+    initialSpacing: 20,
+    endSpacing: 20,
+    height: 220,
+    yAxisOffset: 0,
+    noOfSections: 5,
+    maxValue: 10,
+    isAnimated: true,
+    showVerticalLines: true,
+    verticalLinesColor: "rgba(59, 130, 246, 0.1)",
+    xAxisLabelTextStyle: { color: 'gray', fontSize: 10 },
+    yAxisTextStyle: { color: 'gray', fontSize: 12 },
+    areaChart: false,
+    curvature: 0.2,
+    strokeLinecap: "round",
+    focusEnabled: false,
+    yAxisLabelWidth: 40,
+    yAxisLabelPrefix: "",
+    yAxisLabelSuffix: "",
+    formatYLabel: (value: number) => `${Math.round(value)}`
+  }), [lineDataSets]);
+
+  const pieConfig = useMemo(() => ({
+    data: pieData,
+    donut: true,
+    showText: true,
+    textColor: "black",
+    radius: 90,
+    textSize: 14,
+    showTextBackground: true,
+    textBackgroundRadius: 20,
+    textBackgroundColor: "rgba(255,255,255,0.7)",
+    focusOnPress: true,
+    sectionAutoFocus: true
+  }), [pieData]);
 
   if (isLoading && !data.lastUpdated) {
     return (
@@ -195,78 +298,10 @@ export default function AnalyticsScreen() {
             {/* Show multiple lines using dataSet prop */}
             {lineDataSets.length === 1 ? (
               // Single line (original behavior)
-              <LineChart
-                data={primaryLineData}
-                spacing={50}
-                thickness={3}
-                hideRules={false}
-                hideDataPoints={false}
-                color={lineDataSets[0].color}
-                yAxisColor="#3B82F6"
-                xAxisColor="#3B82F6"
-                dataPointsColor={lineDataSets[0].color}
-                dataPointsRadius={6}
-                initialSpacing={20}
-                endSpacing={20}
-                height={220}
-                yAxisOffset={0}
-                noOfSections={5}
-                maxValue={10}
-                isAnimated={true}
-                animateOnDataChange={false}
-                animationDuration={1000}
-                showVerticalLines={true}
-                verticalLinesColor="rgba(59, 130, 246, 0.1)"
-                verticalLinesThickness={1}
-                xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
-                yAxisTextStyle={{ color: 'gray', fontSize: 12 }}
-                areaChart={false}
-                curved={true}
-                curvature={0.2}
-                strokeLinecap="round"
-                focusEnabled={false}
-                showValuesAsDataPointsText={false}
-                yAxisLabelWidth={40}
-                yAxisLabelPrefix=""
-                yAxisLabelSuffix=""
-                formatYLabel={(value) => `${Math.round(value)}`}
-              />
+              <StableLineChart {...singleLineConfig} />
             ) : (
               // Multiple lines using dataSet
-              <LineChart
-                dataSet={lineDataSets.map((dataset, index) => ({
-                  data: dataset.data,
-                  color: dataset.color,
-                  thickness: 3,
-                  curved: true,
-                  hideDataPoints: false,
-                  dataPointsColor: dataset.color,
-                  dataPointsRadius: 4,
-                }))}
-                spacing={50}
-                hideRules={false}
-                yAxisColor="#3B82F6"
-                xAxisColor="#3B82F6"
-                initialSpacing={20}
-                endSpacing={20}
-                height={220}
-                yAxisOffset={0}
-                noOfSections={5}
-                maxValue={10}
-                isAnimated={true}
-                showVerticalLines={true}
-                verticalLinesColor="rgba(59, 130, 246, 0.1)"
-                xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
-                yAxisTextStyle={{ color: 'gray', fontSize: 12 }}
-                areaChart={false}
-                curvature={0.2}
-                strokeLinecap="round"
-                focusEnabled={false}
-                yAxisLabelWidth={40}
-                yAxisLabelPrefix=""
-                yAxisLabelSuffix=""
-                formatYLabel={(value) => `${Math.round(value)}`}
-              />
+              <StableLineChart {...multiLineConfig} />
             )}
 
             {/* Legend for multiple symptoms */}
@@ -330,19 +365,7 @@ export default function AnalyticsScreen() {
         {pieData.length > 0 ? (
           <View style={analyticsStyles.chartContainer}>
             <View style={{ alignItems: 'center', marginBottom: 20 }}>
-              <PieChart
-                data={pieData}
-                donut
-                showText
-                textColor="black"
-                radius={90}
-                textSize={14}
-                showTextBackground
-                textBackgroundRadius={20}
-                textBackgroundColor="rgba(255,255,255,0.7)"
-                focusOnPress
-                sectionAutoFocus
-              />
+              <StablePieChart {...pieConfig} />
             </View>
 
             {/* Frequency list with last reported time */}

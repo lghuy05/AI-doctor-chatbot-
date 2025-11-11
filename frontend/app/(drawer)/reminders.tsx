@@ -1,11 +1,10 @@
-// app/(drawer)/reminders.tsx - REAL IMPLEMENTATION
+// app/(drawer)/reminders.tsx - REAL IMPLEMENTATION (FIXED)
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Modal, ActivityIndicator } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { remindersStyles } from '../styles/remindersStyles';
 import { useState, useEffect } from 'react';
 import api from '../../api/client';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
 interface Reminder {
   id: string;
   title: string;
@@ -44,10 +43,8 @@ export default function RemindersScreen() {
   const [selectedSuggestion, setSelectedSuggestion] = useState<AIReminderSuggestion | null>(null);
 
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
   const toggleDrawer = () => {
-    // @ts-ignore
-    navigation.toggleDrawer();
+    navigation.dispatch({ type: 'OPEN_DRAWER' } as any);
   };
 
   const fetchReminders = async () => {
@@ -73,10 +70,12 @@ export default function RemindersScreen() {
   const createReminder = async (reminderData?: Partial<Reminder>) => {
     setIsLoading(true);
     try {
+      const timeString = selectedTime.toTimeString().split(' ')[0];
+
       const payload = reminderData || {
         title: newReminder,
         reminder_type: 'custom',
-        scheduled_time: selectedTime.toTimeString().split(' ')[0],
+        scheduled_time: timeString,
         scheduled_date: new Date().toISOString().split('T')[0],
         days_of_week: selectedDays,
         is_recurring: isRecurring,
@@ -209,9 +208,9 @@ export default function RemindersScreen() {
             <Text style={remindersStyles.label}>Time:</Text>
             <DateTimePicker
               value={selectedTime}
-              mode="time"
-              display="spinner"
               onChange={(event, date) => date && setSelectedTime(date)}
+              mode="time"
+              style={remindersStyles.timePicker}
             />
 
             <View style={remindersStyles.toggleRow}>
@@ -223,7 +222,10 @@ export default function RemindersScreen() {
                 ]}
                 onPress={() => setIsRecurring(!isRecurring)}
               >
-                <Text style={remindersStyles.toggleText}>
+                <Text style={[
+                  remindersStyles.toggleText,
+                  isRecurring && remindersStyles.toggleActiveText
+                ]}>
                   {isRecurring ? 'ON' : 'OFF'}
                 </Text>
               </TouchableOpacity>

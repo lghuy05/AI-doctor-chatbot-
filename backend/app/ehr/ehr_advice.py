@@ -2,7 +2,12 @@ from app.database.models import User, UserFHIRMapping
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database.database import get_db
-from app.schemas.schemas import SymptomInput, EnhancedAdviceOut, SymptomIntensityCreate
+from app.schemas.schemas import (
+    EnhancedAdviceOutWithReminders,
+    SymptomInput,
+    EnhancedAdviceOut,
+    SymptomIntensityCreate,
+)
 from app.services.fhir_service import FHIRService
 from app.services.triage_service import triage_rules
 from app.services.llm_service import require_json_with_retry
@@ -13,7 +18,7 @@ from app.services.auth_service import get_current_user
 router = APIRouter()
 
 
-@router.post("/ehr-advice", response_model=EnhancedAdviceOut)
+@router.post("/ehr-advice", response_model=EnhancedAdviceOutWithReminders)
 def enhanced_advice_with_ehr(
     inp: SymptomInput,
     db: Session = Depends(get_db),
