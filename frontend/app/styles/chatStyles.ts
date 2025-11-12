@@ -21,7 +21,7 @@ export const chatStyles = StyleSheet.create({
     paddingBottom: 12,
     backgroundColor: '#F8FAFC',
   },
-  back: {
+  menuButton: {
     width: 40,
     height: 40,
     alignItems: 'center',
@@ -34,8 +34,8 @@ export const chatStyles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  backText: {
-    fontSize: 20,
+  menuText: {
+    fontSize: 18,
     fontWeight: '600',
     color: '#3B82F6',
   },
@@ -45,11 +45,60 @@ export const chatStyles = StyleSheet.create({
     color: '#0F131A',
     letterSpacing: -0.5,
   },
-  headerSpacer: {
-    width: 40,
+  clearButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  clearButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+    fontSize: 14,
   },
 
-  // Card styles
+  // ScrollView styles
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingVertical: 12,
+  },
+
+  // Message container styles
+  messageContainer: {
+    marginBottom: 16,
+  },
+  userMessageContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+  aiMessageContainer: {
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+
+  // Bubble styles
+  userBubble: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    borderBottomRightRadius: 4,
+    maxWidth: '80%',
+  },
+  aiBubble: {
+    maxWidth: '90%',
+    width: '100%',
+  },
+  userText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+
+  // Base card style
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -63,59 +112,26 @@ export const chatStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
-  secondaryCard: {
-    marginTop: 10,
-    backgroundColor: '#F0F9FF',
-    borderColor: '#E0F2FE',
-  },
-  cardText: {
-    color: '#5B6472',
-    textAlign: 'center',
-    fontSize: 14,
-    lineHeight: 20,
-  },
 
-  // Status cards
-  infoCard: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
-    borderLeftWidth: 4,
-    borderLeftColor: '#3B82F6',
+  // Specialized card variants
+  welcomeCard: {
+    alignItems: 'center',
+    paddingVertical: 24,
   },
-  warningCard: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#F59E0B',
-    borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#1E40AF',
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F131A',
+    marginBottom: 8,
     textAlign: 'center',
-    lineHeight: 20,
   },
-  warningTitle: {
+  welcomeText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#92400E',
-    marginBottom: 6,
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#92400E',
+    color: '#64748B',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 24,
   },
 
-  // ScrollView styles
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingVertical: 12,
-  },
-
-  // Loading styles
   loadingCard: {
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
@@ -128,22 +144,191 @@ export const chatStyles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Error styles
-  errorCard: {
+  // Diagnosis card styles
+  diagnosisCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    borderLeftColor: '#8B5CF6',
+    backgroundColor: '#F8FAFC',
   },
-  errorTitle: {
-    color: '#991B1B',
-    fontWeight: '700',
+  diagnosisTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F131A',
+    marginBottom: 12,
+  },
+  diagnosisList: {
+    marginBottom: 12,
+  },
+  diagnosisItem: {
     marginBottom: 6,
-    fontSize: 16,
   },
-  errorText: {
-    color: '#7F1D1D',
+  diagnosisText: {
+    fontSize: 15,
+    color: '#374151',
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+
+  // Reasoning styles
+  reasoningContainer: {
+    backgroundColor: '#F0F9FF',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0EA5E9',
+  },
+  reasoningTitle: {
     fontSize: 14,
+    fontWeight: '700',
+    color: '#0369A1',
+    marginBottom: 6,
+  },
+  reasoningText: {
+    fontSize: 14,
+    color: '#0C4A6E',
+    lineHeight: 20,
+  },
+
+  // Symptom analysis styles
+  symptomCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    backgroundColor: '#F8FAFC',
+  },
+  symptomTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F131A',
+    marginBottom: 16,
+  },
+  severityMeter: {
+    marginBottom: 16,
+  },
+  severityLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  severityLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  severityBar: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  severityFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  severityValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  symptomItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingVertical: 4,
+  },
+  symptomName: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+    width: '40%',
+  },
+  symptomIntensity: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginHorizontal: 8,
+  },
+  symptomIntensityBar: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 3,
+  },
+  symptomIntensityText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+    width: '15%',
+    textAlign: 'right',
+  },
+
+  // Advice card styles
+  adviceCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
+  },
+  adviceTitle: {
+    fontWeight: '800',
+    color: '#0F131A',
+    marginBottom: 12,
+    fontSize: 18,
+    letterSpacing: -0.3,
+  },
+  adviceItem: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  adviceStepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  adviceStepNumber: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#B45309',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginRight: 8,
+  },
+  adviceStep: {
+    color: '#0F131A',
+    fontWeight: '700',
+    fontSize: 15,
+    flex: 1,
+  },
+  adviceDetails: {
+    color: '#5B6472',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  // Warning/Care styles
+  warningCard: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#F59E0B',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+  },
+  warningTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 6,
+  },
+  careItem: {
+    marginBottom: 8,
+  },
+  careText: {
+    fontSize: 14,
+    color: '#92400E',
     lineHeight: 20,
   },
 
@@ -166,86 +351,36 @@ export const chatStyles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '500',
   },
-  emergencyActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 10,
-  },
-  emergencyButton: {
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 12,
-    flex: 1,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  secondaryEmergencyButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#DC2626',
-  },
-  emergencyButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  secondaryEmergencyButtonText: {
-    color: '#DC2626',
-    fontWeight: '700',
-    fontSize: 15,
-  },
 
-  // Advice styles
-  adviceTitle: {
-    fontWeight: '800',
-    color: '#0F131A',
-    marginBottom: 12,
-    fontSize: 18,
-    letterSpacing: -0.3,
+  // Error styles
+  errorCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
   },
-  adviceItem: {
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  adviceStep: {
-    color: '#0F131A',
+  errorTitle: {
+    color: '#991B1B',
     fontWeight: '700',
-    fontSize: 15,
-    marginBottom: 4,
-  },
-  adviceDetails: {
-    color: '#5B6472',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  careTitle: {
-    fontWeight: '800',
-    color: '#0F131A',
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 6,
     fontSize: 16,
   },
-  careItem: {
-    color: '#5B6472',
+  errorText: {
+    color: '#7F1D1D',
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 6,
-    paddingLeft: 8,
   },
-  disclaimer: {
-    color: '#6B7280',
-    marginTop: 16,
+
+  // Disclaimer card
+  disclaimerCard: {
+    backgroundColor: '#FEFCE8',
+    borderLeftColor: '#EAB308',
+  },
+  disclaimerText: {
     fontSize: 12,
+    color: '#713F12',
     fontStyle: 'italic',
-    lineHeight: 18,
+    lineHeight: 16,
     textAlign: 'center',
   },
 
@@ -306,58 +441,7 @@ export const chatStyles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  // Retry button styles
-  retryButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignSelf: 'center',
-    marginTop: 12,
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-
-  // New utility styles for better spacing
-  spaceY: {
-    marginVertical: 8,
-  },
-  textSm: {
-    fontSize: 12,
-  },
-  textMd: {
-    fontSize: 14,
-  },
-  textLg: {
-    fontSize: 16,
-  },
-  menuButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  menuText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#3B82F6',
-  },
-  // Add to chatStyles.ts - REMINDER POPUP STYLES
+  // REMINDER POPUP STYLES (keep these as they are)
   reminderPopup: {
     position: 'absolute',
     top: 0,
@@ -483,18 +567,6 @@ export const chatStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  clearButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  clearButtonText: {
-    color: '#374151',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  // Add to chatStyles.ts - ENHANCED REMINDER POPUP STYLES
   timeSelectionContainer: {
     marginTop: 12,
     paddingTop: 12,
@@ -550,6 +622,18 @@ export const chatStyles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 4,
   },
+
+  // Utility styles
+  spaceY: {
+    marginVertical: 8,
+  },
+  textSm: {
+    fontSize: 12,
+  },
+  textMd: {
+    fontSize: 14,
+  },
+  textLg: {
+    fontSize: 16,
+  },
 });
-
-

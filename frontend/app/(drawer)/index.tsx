@@ -1,4 +1,4 @@
-// app/(drawer)/index.tsx - COMPLETE FIXED VERSION
+// app/(drawer)/index.tsx - UPDATED WITH DIAGNOSIS DISPLAY
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -26,6 +26,27 @@ interface CustomReminderData {
   days_of_week: string[];
   is_recurring: boolean;
   recurrence_pattern: string;
+}
+
+interface AIResponse {
+  emergency?: boolean;
+  notice?: string;
+  error?: string;
+  possible_diagnosis?: string[];
+  diagnosis_reasoning?: string;
+  advice?: Array<{ step: string; details: string }>;
+  when_to_seek_care?: string[];
+  disclaimer?: string;
+  symptom_analysis?: {
+    intensities: Array<{
+      symptom_name: string;
+      intensity: number;
+      duration_minutes: number;
+      notes: string;
+    }>;
+    overall_severity: number;
+  };
+  ai_reminder_suggestions?: AIReminderSuggestion[];
 }
 
 export default function ChatIntroScreen() {
@@ -114,7 +135,7 @@ export default function ChatIntroScreen() {
       const triage = triageResponse.data;
 
       if (triage.risk === 'emergency') {
-        const emergencyResponse = {
+        const emergencyResponse: AIResponse = {
           emergency: true,
           notice: 'Based on your symptoms and medical history, this appears to be a potential emergency. Please call 911 or go to the nearest emergency room immediately.'
         };
@@ -125,7 +146,7 @@ export default function ChatIntroScreen() {
         return;
       }
 
-      // Step 2: Get personalized advice
+      // Step 2: Get personalized advice with diagnosis
       const adviceResponse = await api.post('/ehr-advice', payload);
 
       // Save to persistent store
@@ -173,7 +194,7 @@ export default function ChatIntroScreen() {
         errorMessage = 'Server is temporarily unavailable. Please try again later.';
       }
 
-      const errorResponse = { error: errorMessage };
+      const errorResponse: AIResponse = { error: errorMessage };
       addMessage(text, errorResponse, text, patientContext);
 
     } finally {
@@ -182,8 +203,8 @@ export default function ChatIntroScreen() {
     }
   };
 
+  // ... (keep all the reminder-related functions the same as before)
   const handleManualTimeChange = (text: string, index: number) => {
-    // Basic time format validation (HH:MM)
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 
     setTempTime(prev => ({
@@ -235,31 +256,27 @@ export default function ChatIntroScreen() {
 
       console.log('🔄 Adding reminder:', { suggestion, customData });
 
-      // Validate required fields
       if (!customData.title.trim()) {
         Alert.alert('Error', 'Reminder title is required');
         return false;
       }
 
-      // Validate time format
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
       if (!timeRegex.test(customData.scheduled_time)) {
         Alert.alert('Error', 'Please enter a valid time in HH:MM format (e.g., 14:30)');
         return false;
       }
 
-      // FIX: Convert time to proper backend format (SIMPLE FIX)
       const [hours, minutes] = customData.scheduled_time.split(':');
-      const backendTimeFormat = `${hours}:${minutes}:00.000Z`; // Simple format
+      const backendTimeFormat = `${hours}:${minutes}:00.000Z`;
 
-      // Ensure days_of_week has proper format
       const formattedDays = customData.days_of_week.map(day => day.toString());
 
       const reminderData = {
         title: customData.title.trim(),
         description: customData.description || '',
         reminder_type: 'custom',
-        scheduled_time: backendTimeFormat, // Use simple format
+        scheduled_time: backendTimeFormat,
         scheduled_date: new Date().toISOString().split('T')[0],
         days_of_week: formattedDays,
         is_recurring: customData.is_recurring || false,
@@ -271,13 +288,11 @@ export default function ChatIntroScreen() {
 
       console.log('📤 Sending reminder data to backend:', JSON.stringify(reminderData, null, 2));
 
-      // Make API call
       const response = await api.post('/reminders', reminderData);
 
       if (response.status === 200 || response.status === 201) {
         console.log('✅ Reminder added successfully:', response.data);
 
-        // Remove the added suggestion
         const newSuggestions = [...aiReminderSuggestions];
         const newCustomReminders = { ...customReminders };
         const newTempTime = { ...tempTime };
@@ -304,32 +319,18 @@ export default function ChatIntroScreen() {
 
     } catch (error: any) {
       console.error('❌ Error adding reminder:', error);
-
-      // ENHANCED ERROR LOGGING - Show exact validation errors
       if (error.response?.data?.detail) {
         console.error('📋 Backend validation errors:', error.response.data.detail);
-
-        // Log each validation error in detail
         const validationErrors = error.response.data.detail;
         if (Array.isArray(validationErrors)) {
-          validationErrors.forEach((err, idx) => {
-            console.error(`Validation Error ${idx + 1}:`, {
-              location: err.loc,
-              message: err.msg,
-              type: err.type
-            });
-          });
-
           const errorMessages = validationErrors.map((err: any) =>
             `${err.loc?.join('.')}: ${err.msg} (${err.type})`
           ).join('\n\n');
           Alert.alert('Validation Error', errorMessages);
         } else {
-          console.error('Non-array validation error:', validationErrors);
           Alert.alert('Error', JSON.stringify(validationErrors, null, 2));
         }
       } else {
-        console.error('No detailed error response:', error.response);
         Alert.alert('Error', `Failed to add reminder: ${error.response?.data?.message || error.message}`);
       }
       return false;
@@ -339,13 +340,10 @@ export default function ChatIntroScreen() {
   const handleAddAllReminders = async () => {
     try {
       console.log('🔄 Starting to add all reminders...');
-
-      // Create a copy of the current indices to process
       const indicesToProcess = [...aiReminderSuggestions.keys()];
       let successCount = 0;
       let errorCount = 0;
 
-      // Process reminders sequentially to avoid race conditions
       for (let i = 0; i < indicesToProcess.length; i++) {
         const index = indicesToProcess[i];
         try {
@@ -356,8 +354,6 @@ export default function ChatIntroScreen() {
           } else {
             errorCount++;
           }
-
-          // Small delay between requests
           await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
           console.error(`❌ Failed to add reminder at index ${index}:`, error);
@@ -367,7 +363,6 @@ export default function ChatIntroScreen() {
 
       console.log(`✅ Finished processing: ${successCount} successful, ${errorCount} failed`);
 
-      // Show final summary
       if (successCount > 0) {
         Alert.alert(
           'Success',
@@ -377,7 +372,6 @@ export default function ChatIntroScreen() {
         Alert.alert('Error', 'Failed to add any reminders. Please try adding them individually.');
       }
 
-      // Close popup if all processed
       if (successCount + errorCount === indicesToProcess.length) {
         setShowReminderPopup(false);
       }
@@ -400,39 +394,138 @@ export default function ChatIntroScreen() {
     }
   };
 
+  // NEW: Enhanced chat message renderer with diagnosis display
   const renderChatMessage = (chat: ChatMessage) => (
-    <View key={chat.id} style={chatStyles.chatBubble}>
+    <View key={chat.id} style={chatStyles.messageContainer}>
       {/* User Message */}
-      <View style={chatStyles.userBubble}>
-        <Text style={chatStyles.userText}>{chat.userMessage}</Text>
+      <View style={chatStyles.userMessageContainer}>
+        <View style={chatStyles.userBubble}>
+          <Text style={chatStyles.userText}>{chat.userMessage}</Text>
+        </View>
       </View>
 
       {/* AI Response */}
-      <View style={chatStyles.aiBubble}>
-        {chat.aiResponse.emergency && (
-          <View style={[chatStyles.card, chatStyles.emergencyCard]}>
-            <Text style={chatStyles.emergencyTitle}>🚨 Emergency Alert</Text>
-            <Text style={chatStyles.emergencyText}>{chat.aiResponse.notice}</Text>
-          </View>
-        )}
+      <View style={chatStyles.aiMessageContainer}>
+        <View style={chatStyles.aiBubble}>
 
-        {chat.aiResponse.advice && (
-          <View style={chatStyles.adviceContainer}>
-            <Text style={chatStyles.adviceTitle}>At-home steps</Text>
-            {chat.aiResponse.advice.map((a, idx) => (
-              <View key={idx} style={chatStyles.adviceItem}>
-                <Text style={chatStyles.adviceStep}>{a.step}</Text>
-                <Text style={chatStyles.adviceDetails}>{a.details}</Text>
+          {/* Emergency Alert */}
+          {chat.aiResponse.emergency && (
+            <View style={[chatStyles.card, chatStyles.emergencyCard]}>
+              <Text style={chatStyles.emergencyTitle}>🚨 Emergency Alert</Text>
+              <Text style={chatStyles.emergencyText}>{chat.aiResponse.notice}</Text>
+            </View>
+          )}
+
+          {/* Diagnosis Section - NEW */}
+          {chat.aiResponse.possible_diagnosis && chat.aiResponse.possible_diagnosis.length > 0 && (
+            <View style={[chatStyles.card, chatStyles.diagnosisCard]}>
+              <Text style={chatStyles.diagnosisTitle}>🩺 Possible Conditions</Text>
+              <View style={chatStyles.diagnosisList}>
+                {chat.aiResponse.possible_diagnosis.map((diagnosis, idx) => (
+                  <View key={idx} style={chatStyles.diagnosisItem}>
+                    <Text style={chatStyles.diagnosisText}>• {diagnosis}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        )}
 
-        {chat.aiResponse.error && (
-          <View style={[chatStyles.card, chatStyles.errorCard]}>
-            <Text style={chatStyles.errorText}>{chat.aiResponse.error}</Text>
-          </View>
-        )}
+              {/* Diagnosis Reasoning */}
+              {chat.aiResponse.diagnosis_reasoning && (
+                <View style={chatStyles.reasoningContainer}>
+                  <Text style={chatStyles.reasoningTitle}>Analysis</Text>
+                  <Text style={chatStyles.reasoningText}>{chat.aiResponse.diagnosis_reasoning}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Symptom Analysis - NEW */}
+          {chat.aiResponse.symptom_analysis && (
+            <View style={[chatStyles.card, chatStyles.symptomCard]}>
+              <Text style={chatStyles.symptomTitle}>📊 Symptom Analysis</Text>
+              <View style={chatStyles.severityMeter}>
+                <View style={chatStyles.severityLabels}>
+                  <Text style={chatStyles.severityLabel}>Mild</Text>
+                  <Text style={chatStyles.severityLabel}>Moderate</Text>
+                  <Text style={chatStyles.severityLabel}>Severe</Text>
+                </View>
+                <View style={chatStyles.severityBar}>
+                  <View
+                    style={[
+                      chatStyles.severityFill,
+                      {
+                        width: `${(chat.aiResponse.symptom_analysis.overall_severity / 10) * 100}%`,
+                        backgroundColor: chat.aiResponse.symptom_analysis.overall_severity >= 7 ? '#EF4444' :
+                          chat.aiResponse.symptom_analysis.overall_severity >= 4 ? '#F59E0B' : '#10B981'
+                      }
+                    ]}
+                  />
+                </View>
+                <Text style={chatStyles.severityValue}>
+                  Overall Severity: {chat.aiResponse.symptom_analysis.overall_severity}/10
+                </Text>
+              </View>
+
+              {/* Individual Symptoms */}
+              {chat.aiResponse.symptom_analysis.intensities.map((symptom, idx) => (
+                <View key={idx} style={chatStyles.symptomItem}>
+                  <Text style={chatStyles.symptomName}>{symptom.symptom_name}</Text>
+                  <View style={chatStyles.symptomIntensity}>
+                    <View
+                      style={[
+                        chatStyles.symptomIntensityBar,
+                        { width: `${(symptom.intensity / 10) * 100}%` }
+                      ]}
+                    />
+                  </View>
+                  <Text style={chatStyles.symptomIntensityText}>{symptom.intensity}/10</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Advice Section */}
+          {chat.aiResponse.advice && chat.aiResponse.advice.length > 0 && (
+            <View style={[chatStyles.card, chatStyles.adviceCard]}>
+              <Text style={chatStyles.adviceTitle}>💡 At-Home Care Steps</Text>
+              {chat.aiResponse.advice.map((adviceItem, idx) => (
+                <View key={idx} style={chatStyles.adviceItem}>
+                  <View style={chatStyles.adviceStepHeader}>
+                    <Text style={chatStyles.adviceStepNumber}>Step {idx + 1}</Text>
+                    <Text style={chatStyles.adviceStep}>{adviceItem.step}</Text>
+                  </View>
+                  <Text style={chatStyles.adviceDetails}>{adviceItem.details}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* When to Seek Care */}
+          {chat.aiResponse.when_to_seek_care && chat.aiResponse.when_to_seek_care.length > 0 && (
+            <View style={[chatStyles.card, chatStyles.warningCard]}>
+              <Text style={chatStyles.warningTitle}>⚠️ When to Seek Medical Care</Text>
+              {chat.aiResponse.when_to_seek_care.map((warning, idx) => (
+                <View key={idx} style={chatStyles.careItem}>
+                  <Text style={chatStyles.careText}>• {warning}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Error Message */}
+          {chat.aiResponse.error && (
+            <View style={[chatStyles.card, chatStyles.errorCard]}>
+              <Text style={chatStyles.errorTitle}>Error</Text>
+              <Text style={chatStyles.errorText}>{chat.aiResponse.error}</Text>
+            </View>
+          )}
+
+          {/* Disclaimer */}
+          {chat.aiResponse.disclaimer && (
+            <View style={[chatStyles.card, chatStyles.disclaimerCard]}>
+              <Text style={chatStyles.disclaimerText}>{chat.aiResponse.disclaimer}</Text>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -452,9 +545,8 @@ export default function ChatIntroScreen() {
             <Text style={chatStyles.menuText}>☰</Text>
           </TouchableOpacity>
 
-          <Text style={chatStyles.title}>AI Doctor App</Text>
+          <Text style={chatStyles.title}>AI Doctor</Text>
 
-          {/* Clear Chat Button */}
           <TouchableOpacity
             style={chatStyles.clearButton}
             onPress={clearCurrentSession}
@@ -470,10 +562,11 @@ export default function ChatIntroScreen() {
           showsVerticalScrollIndicator={false}
         >
           {currentSession.length === 0 && (
-            <View style={chatStyles.welcomeCard}>
-              <Text style={chatStyles.welcomeTitle}>Welcome to AI Doctor</Text>
+            <View style={[chatStyles.card, chatStyles.welcomeCard]}>
+              <Text style={chatStyles.welcomeTitle}>👋 Welcome to AI Doctor</Text>
               <Text style={chatStyles.welcomeText}>
                 Describe your symptoms and get personalized medical advice based on your health profile.
+                I'll help you understand possible conditions and provide at-home care guidance.
               </Text>
             </View>
           )}
@@ -524,7 +617,7 @@ export default function ChatIntroScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* AI Reminder Suggestions Popup - WORKING VERSION */}
+        {/* AI Reminder Suggestions Popup - UNCHANGED */}
         <Modal
           visible={showReminderPopup}
           animationType="slide"
@@ -555,7 +648,6 @@ export default function ChatIntroScreen() {
                           {customData.description}
                         </Text>
 
-                        {/* Time Selection - SIMPLE TEXT INPUT */}
                         <View style={chatStyles.timeSelectionContainer}>
                           <Text style={chatStyles.timeSelectionLabel}>Time (24-hour format):</Text>
                           <TextInput
@@ -572,7 +664,6 @@ export default function ChatIntroScreen() {
                           </Text>
                         </View>
 
-                        {/* Days Selection */}
                         <View style={chatStyles.timeSelectionContainer}>
                           <Text style={chatStyles.timeSelectionLabel}>Repeat on:</Text>
                           <View style={chatStyles.daysContainer}>
