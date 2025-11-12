@@ -81,7 +81,6 @@ export default function AnalyticsScreen() {
     setRefreshing(false);
   };
 
-  // FIXED: Memoize line chart data to prevent hook order issues
   const getLineChartData = useMemo(() => {
     const { symptoms, dates } = data.symptomIntensity;
 
@@ -100,12 +99,19 @@ export default function AnalyticsScreen() {
         return null;
       }
 
-      // FIXED: Proper date formatting using the date string directly
-      const lineData = symptom.data.map((point, index) => {
-        // Use the date string directly from backend (already in Tampa time)
-        const dateParts = point.date.split('-');
-        const month = new Date(point.date).toLocaleString('default', { month: 'short' });
-        const day = dateParts[2]; // Get day directly from YYYY-MM-DD format
+      // FIXED: Sort data by Tampa date to ensure proper line connection
+      const sortedData = [...symptom.data].sort((a, b) =>
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      console.log(`📊 ${symptomName} data:`, sortedData); // Debug log
+
+      // FIXED: Create continuous data points with proper date formatting
+      const lineData = sortedData.map((point) => {
+        // Use the Tampa date directly from backend (format: "2025-11-12")
+        const date = new Date(point.date + 'T00:00:00'); // Add time to ensure proper parsing
+        const month = date.toLocaleString('default', { month: 'short' });
+        const day = date.getDate();
 
         const formattedDate = `${month} ${day}`;
 
@@ -137,24 +143,35 @@ export default function AnalyticsScreen() {
       text: `${item.percentage.toFixed(0)}%`,
     }));
   }, [data.symptomFrequency]);
+  // Add this debug useEffect to see your actual data
+  useEffect(() => {
+    if (lineDataSets.length > 0) {
+      console.log('📈 LINE CHART DATA DEBUG:');
+      lineDataSets.forEach((dataset, index) => {
+        console.log(`Symptom ${index + 1}: ${dataset.name}`);
+        console.log('Data points:', dataset.data);
+        console.log('---');
+      });
+    }
+  }, [lineDataSets]);
 
   const lineDataSets = getLineChartData;
   const pieData = getPieChartData;
   const hasLineData = lineDataSets.length > 0;
   const primaryLineData = lineDataSets[0]?.data || [];
 
-  // FIXED: Memoize chart configurations
+  // FIXED: Memoize chart configurations with better line connection
   const singleLineConfig = useMemo(() => ({
     data: primaryLineData,
     spacing: 50,
     thickness: 3,
     hideRules: false,
-    hideDataPoints: false,
+    hideDataPoints: primaryLineData.length > 15, // Hide points if too many
     color: lineDataSets[0]?.color || '#3B82F6',
     yAxisColor: "#3B82F6",
     xAxisColor: "#3B82F6",
     dataPointsColor: lineDataSets[0]?.color || '#3B82F6',
-    dataPointsRadius: 6,
+    dataPointsRadius: 4,
     initialSpacing: 20,
     endSpacing: 20,
     height: 220,
@@ -178,7 +195,14 @@ export default function AnalyticsScreen() {
     yAxisLabelWidth: 40,
     yAxisLabelPrefix: "",
     yAxisLabelSuffix: "",
-    formatYLabel: (value: number) => `${Math.round(value)}`
+    formatYLabel: (value: number) => `${Math.round(value)}`,
+    // FIXED: Ensure lines connect properly
+    adjustToWidth: true,
+    scrollToEnd: true,
+    showXAxisIndices: true,
+    xAxisIndicesHeight: 4,
+    xAxisIndicesWidth: 1,
+    xAxisIndicesColor: "rgba(0,0,0,0.2)"
   }), [primaryLineData, lineDataSets[0]?.color]);
 
   const multiLineConfig = useMemo(() => ({
@@ -187,9 +211,12 @@ export default function AnalyticsScreen() {
       color: dataset.color,
       thickness: 3,
       curved: true,
-      hideDataPoints: false,
+      hideDataPoints: dataset.data.length > 15, // Hide points if too many
       dataPointsColor: dataset.color,
       dataPointsRadius: 4,
+      // FIXED: Ensure each line connects properly
+      strokeDashArray: [],
+      showValuesAsDataPointsText: false
     })),
     spacing: 50,
     hideRules: false,
@@ -213,7 +240,10 @@ export default function AnalyticsScreen() {
     yAxisLabelWidth: 40,
     yAxisLabelPrefix: "",
     yAxisLabelSuffix: "",
-    formatYLabel: (value: number) => `${Math.round(value)}`
+    formatYLabel: (value: number) => `${Math.round(value)}`,
+    // FIXED: Better multi-line configuration
+    adjustToWidth: true,
+    scrollToEnd: true
   }), [lineDataSets]);
 
   const pieConfig = useMemo(() => ({

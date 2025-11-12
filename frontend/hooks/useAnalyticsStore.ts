@@ -154,6 +154,12 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
         // Process and assign colors to symptoms
         if (processedData.symptoms) {
           Object.values(processedData.symptoms).forEach((symptom: any, index) => {
+            // FIXED: Ensure data is sorted by Tampa date for proper line connection
+            if (symptom.data && symptom.data.length > 0) {
+              symptom.data.sort((a: any, b: any) =>
+                new Date(a.date).getTime() - new Date(b.date).getTime()
+              );
+            }
             symptom.color = getSymptomColor(symptom.name, index);
           });
         }
