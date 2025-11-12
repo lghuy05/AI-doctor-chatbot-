@@ -28,12 +28,11 @@ class PineconeService:
 
             print(f"🔍 Querying Pinecone for: {query}")
 
-            # Use Pinecone's integrated embeddings for querying
-            results = self.index.query(
+            # Use search() for integrated embeddings
+            results = self.index.search(
                 namespace="medical-namespace",
-                query=query,  # Pinecone automatically embeds this text
-                top_k=n_results,
-                include_metadata=True,
+                query={"inputs": {"text": query}, "top_k": n_results},
+                fields=["text"],  # Specify which metadata fields to return
             )
 
             # Format results to match your existing structure
@@ -41,10 +40,10 @@ class PineconeService:
             metadatas = []
             distances = []
 
-            for match in results.matches:
-                documents.append(match.metadata.get("text", ""))
-                metadatas.append(match.metadata)
-                distances.append(1 - match.score)  # Convert similarity to distance
+            for hit in results["result"]["hits"]:
+                documents.append(hit["fields"].get("text", ""))
+                metadatas.append(hit["fields"])
+                distances.append(1 - hit["_score"])  # Convert similarity to distance
 
             print(f"✅ Found {len(documents)} results in Pinecone")
             return {
@@ -55,7 +54,6 @@ class PineconeService:
 
         except Exception as e:
             print(f"❌ Pinecone query error: {e}")
-            # Return empty results but don't break the app
             return {"documents": [[]], "metadatas": [[]], "distances": [[]]}
 
     def store_articles(self, articles):
