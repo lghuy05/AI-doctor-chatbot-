@@ -8,19 +8,23 @@ class PineconeService:
         self.index_name = "medical-knowledge"
 
         try:
-            # Initialize Pinecone with the new SDK
+            # Initialize Pinecone
             self.pc = pinecone.Pinecone(api_key=self.api_key)
 
             # Connect to your existing index
             self.index = self.pc.Index(self.index_name)
             print("✅ Pinecone initialized successfully")
 
+            # Test connection
+            stats = self.index.describe_index_stats()
+            print(f"📊 Index stats: {stats}")
+
         except Exception as e:
             print(f"❌ Pinecone initialization error: {e}")
             self.index = None
 
     def query_medical_knowledge(self, query: str, n_results: int = 5):
-        """Query medical knowledge using Pinecone"""
+        """Query medical knowledge using Pinecone's integrated embeddings"""
         try:
             if not self.index:
                 print("❌ Pinecone index not available")
@@ -28,10 +32,10 @@ class PineconeService:
 
             print(f"🔍 Querying Pinecone for: {query}")
 
-            # For serverless indexes with built-in embeddings, use query text directly
-            # Note: You might need to adjust this based on your specific index configuration
+            # Use Pinecone's integrated embeddings - just pass the text!
             results = self.index.query(
-                vector=[0] * 1024,  # Dummy vector for now
+                namespace="medical-namespace",
+                query=query,  # Pinecone automatically embeds this text
                 top_k=n_results,
                 include_metadata=True,
             )
@@ -59,11 +63,51 @@ class PineconeService:
             return {"documents": [[]], "metadatas": [[]], "distances": [[]]}
 
     def store_articles(self, articles):
-        """Store articles in Pinecone"""
+        """Store PubMed articles in Pinecone using integrated embeddings"""
         try:
-            print(f"📝 Would store {len(articles)} articles in Pinecone")
-            # For now, just return True to avoid blocking the application
-            # We'll implement proper storage later
+            if not self.index:
+                print("❌ Pinecone index not available for storage")
+                return False
+
+            print(f"📝 Storing {len(articles)} PubMed articles in Pinecone")
+
+            records = []
+            for i, article in enumerate(articles):
+                # Use the article content - Pinecone will automatically embed it
+                content = article.get("content", "")
+                if not content or len(content.strip()) < 10:  # Skip empty/short content
+                    continue
+
+                # Create record with text - Pinecone handles embedding automatically
+                record = {
+                    "_id": f"pubmed_{article.get('pubmed_id', f'article_{i}')}",
+                    "values": content,  # Pinecone automatically embeds this text
+                    "metadata": {
+                        "title": article.get("title", "No title"),
+                        "content": content,
+                        "year": article.get("year", "Unknown"),
+                        "journal": article.get("journal", "Unknown"),
+                        "pubmed_id": article.get("pubmed_id", "Unknown"),
+                        "abstract": article.get("abstract", ""),
+                        "keywords": ", ".join(article.get("keywords", [])),
+                        "article_type": article.get("article_type", "research"),
+                    },
+                }
+                records.append(record)
+
+            if not records:
+                print("❌ No valid articles to store")
+                return False
+
+            # Upsert records to Pinecone - it automatically generates embeddings!
+            print(f"🚀 Upserting {len(records)} records to Pinecone...")
+
+            # Use upsert_records for integrated embeddings
+            upsert_response = self.index.upsert(
+                namespace="medical-namespace", records=records
+            )
+
+            print(f"✅ Successfully stored {len(records)} articles in Pinecone")
             return True
 
         except Exception as e:
