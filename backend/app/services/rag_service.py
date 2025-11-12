@@ -5,6 +5,11 @@ from app.services.pinecone_service import pinecone_service
 
 
 def get_medical_context(symptoms: str, min_results: int = 5):
+    print(f"🔧 Pinecone index available: {pinecone_service.index is not None}")
+
+    # First try Pinecone
+    results = query_medical_knowledge(symptoms, n_results=min_results + 2)
+    print(f"🔧 Raw Pinecone results: {results}")
     # First try Pinecone
     results = query_medical_knowledge(symptoms, n_results=min_results + 2)
     documents = results.get("documents", [[]])[0]

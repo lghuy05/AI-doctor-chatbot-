@@ -8,16 +8,12 @@ class PineconeService:
         self.index_name = "medical-knowledge"
 
         try:
-            # Initialize Pinecone
+            # Initialize Pinecone with the new SDK
             self.pc = pinecone.Pinecone(api_key=self.api_key)
 
             # Connect to your existing index
             self.index = self.pc.Index(self.index_name)
             print("✅ Pinecone initialized successfully")
-
-            # Test connection
-            stats = self.index.describe_index_stats()
-            print(f"📊 Index stats: {stats}")
 
         except Exception as e:
             print(f"❌ Pinecone initialization error: {e}")
@@ -32,7 +28,7 @@ class PineconeService:
 
             print(f"🔍 Querying Pinecone for: {query}")
 
-            # Use Pinecone's integrated embeddings - just pass the text!
+            # Use Pinecone's integrated embeddings for querying
             results = self.index.query(
                 namespace="medical-namespace",
                 query=query,  # Pinecone automatically embeds this text
@@ -46,7 +42,7 @@ class PineconeService:
             distances = []
 
             for match in results.matches:
-                documents.append(match.metadata.get("content", ""))
+                documents.append(match.metadata.get("chunk_text", ""))
                 metadatas.append(match.metadata)
                 distances.append(1 - match.score)  # Convert similarity to distance
 
@@ -73,25 +69,21 @@ class PineconeService:
 
             records = []
             for i, article in enumerate(articles):
-                # Use the article content - Pinecone will automatically embed it
                 content = article.get("content", "")
-                if not content or len(content.strip()) < 10:  # Skip empty/short content
+                if not content or len(content.strip()) < 10:
                     continue
 
-                # Create record with text - Pinecone handles embedding automatically
+                # Format for upsert_records with integrated embedding
                 record = {
-                    "_id": f"pubmed_{article.get('pubmed_id', f'article_{i}')}",
-                    "values": content,  # Pinecone automatically embeds this text
-                    "metadata": {
-                        "title": article.get("title", "No title"),
-                        "content": content,
-                        "year": article.get("year", "Unknown"),
-                        "journal": article.get("journal", "Unknown"),
-                        "pubmed_id": article.get("pubmed_id", "Unknown"),
-                        "abstract": article.get("abstract", ""),
-                        "keywords": ", ".join(article.get("keywords", [])),
-                        "article_type": article.get("article_type", "research"),
-                    },
+                    "_id": f"pubmed_{article.get('pubmed_id', i)}",
+                    "chunk_text": content,  # This field gets auto-embedded
+                    "title": article.get("title", "No title"),
+                    "year": article.get("year", "Unknown"),
+                    "journal": article.get("journal", "Unknown"),
+                    "pubmed_id": article.get("pubmed_id", "Unknown"),
+                    "abstract": article.get("abstract", ""),
+                    "keywords": ", ".join(article.get("keywords", [])),
+                    "article_type": article.get("article_type", "research"),
                 }
                 records.append(record)
 
@@ -99,13 +91,10 @@ class PineconeService:
                 print("❌ No valid articles to store")
                 return False
 
-            # Upsert records to Pinecone - it automatically generates embeddings!
             print(f"🚀 Upserting {len(records)} records to Pinecone...")
 
             # Use upsert_records for integrated embeddings
-            upsert_response = self.index.upsert(
-                namespace="medical-namespace", records=records
-            )
+            self.index.upsert_records("medical-namespace", records)
 
             print(f"✅ Successfully stored {len(records)} articles in Pinecone")
             return True
