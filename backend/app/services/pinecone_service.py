@@ -42,7 +42,7 @@ class PineconeService:
             distances = []
 
             for match in results.matches:
-                documents.append(match.metadata.get("chunk_text", ""))
+                documents.append(match.metadata.get("text", ""))
                 metadatas.append(match.metadata)
                 distances.append(1 - match.score)  # Convert similarity to distance
 
@@ -76,7 +76,7 @@ class PineconeService:
                 # Format for upsert_records with integrated embedding
                 record = {
                     "_id": f"pubmed_{article.get('pubmed_id', i)}",
-                    "chunk_text": content,  # This field gets auto-embedded
+                    "text": content,  # This field gets auto-embedded
                     "title": article.get("title", "No title"),
                     "year": article.get("year", "Unknown"),
                     "journal": article.get("journal", "Unknown"),
