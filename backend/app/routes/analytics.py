@@ -205,3 +205,29 @@ def debug_timezone(
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+@router.get("/analytics/debug-symptoms-raw")
+def debug_symptoms_raw(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """Debug endpoint to see raw symptom data"""
+    try:
+        debug_data = SymptomTrackingService.debug_symptom_data(db, current_user.id)
+
+        formatted_data = []
+        for row in debug_data:
+            formatted_data.append(
+                {
+                    "symptom": row.symptom_name,
+                    "intensity": row.intensity,
+                    "stored_utc": str(row.stored_utc),
+                    "tampa_time": row.tampa_time.isoformat(),
+                    "tampa_date": str(row.tampa_date),
+                }
+            )
+
+        return {"success": True, "count": len(debug_data), "data": formatted_data}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}

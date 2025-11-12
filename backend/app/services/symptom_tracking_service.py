@@ -135,12 +135,20 @@ class SymptomTrackingService:
     def get_symptom_intensity_history(
         db: Session, user_id: int, days: int = 30
     ) -> List:
-        """Get symptom intensity history for charts - WITH TIMEZONE HANDLING"""
+        """Get symptom intensity history for charts - FIXED TIMEZONE ISSUE"""
         try:
-            # Calculate the start date in Tampa time
-            # tampa_now = SymptomTrackingService.get_local_time()
-            start_date = datetime.now() - timedelta(days=days)
+            # FIXED: Use Tampa time for date calculations
+            tampa_now = SymptomTrackingService.get_local_time()
+            start_date = tampa_now - timedelta(days=days)
+
+            print(f"🔍 DEBUG - Date range for query:")
+            print(f"  Tampa now: {tampa_now}")
+            print(f"  Start date (Tampa): {start_date}")
+            print(f"  Days requested: {days}")
+
+            # Convert to UTC for database query
             start_date_utc = SymptomTrackingService.local_to_utc(start_date)
+
             query = text("""
                 SELECT 
                     symptom_name,
@@ -154,21 +162,30 @@ class SymptomTrackingService:
                 GROUP BY symptom_name, DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern')
                 ORDER BY date ASC, symptom_name
             """)
+
             result = db.execute(
                 query, {"user_id": user_id, "start_date": start_date_utc}
             )
             rows = result.fetchall()
+
             print(f"📊 Fetched {len(rows)} intensity records for user {user_id}")
 
-            print("📅 DATES BEING RETURNED FROM DATABASE (Tampa Time):")
+            # Debug: Show what dates we found
+            unique_dates = set(row.date for row in rows)
+            print(f"📅 UNIQUE DATES FOUND: {sorted(unique_dates)}")
+
             for row in rows:
                 print(
-                    f"  - {row.date}: {row.symptom_name} (intensity: {row.daily_avg_intensity})"
+                    f"  - {row.date}: {row.symptom_name} (avg: {row.daily_avg_intensity:.1f}, count: {row.daily_occurrences})"
                 )
 
-            return rows  # No need for conversion now since we did it in SQL
+            return rows
+
         except Exception as e:
             print(f"❌ Error fetching symptom history: {e}")
+            import traceback
+
+            traceback.print_exc()
             return []
 
     @staticmethod
@@ -322,3 +339,36 @@ class SymptomTrackingService:
         except Exception as e:
             print(f"❌ Error getting symptom trends: {e}")
             return {}
+
+    @staticmethod
+    def debug_symptom_data(db: Session, user_id: int, limit: int = 20):
+        """Debug method to see raw symptom data with timestamps"""
+        try:
+            query = text("""
+                SELECT 
+                    symptom_name,
+                    intensity,
+                    created_at as stored_utc,
+                    created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern' as tampa_time,
+                    DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern') as tampa_date
+                FROM symptom_intensity 
+                WHERE user_id = :user_id
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """)
+
+            result = db.execute(query, {"user_id": user_id, "limit": limit})
+            rows = result.fetchall()
+
+            print("🔍 DEBUG - RAW SYMPTOM DATA IN DATABASE:")
+            for row in rows:
+                print(
+                    f"  {row.tampa_date} {row.tampa_time.strftime('%H:%M:%S')} - {row.symptom_name} (intensity: {row.intensity})"
+                )
+                print(f"    Stored as UTC: {row.stored_utc}")
+
+            return rows
+
+        except Exception as e:
+            print(f"❌ Error in debug_symptom_data: {e}")
+            return []
