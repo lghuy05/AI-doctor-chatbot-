@@ -65,7 +65,7 @@ class SymptomTrackingService:
                     "intensity": intensity_data.intensity,
                     "duration_minutes": duration_minutes,
                     "notes": intensity_data.notes,
-                    "created_at": current_timestamp,
+                    "created_at": datetime.now(timezone.utc),
                 },
             )
 
@@ -135,49 +135,41 @@ class SymptomTrackingService:
     def get_symptom_intensity_history(
         db: Session, user_id: int, days: int = 30
     ) -> List:
-        """Get symptom intensity history for charts - FIXED TIMEZONE ISSUE"""
+        """Get symptom intensity history - FIXED FOR TIMEZONE CONFUSION"""
         try:
-            # FIXED: Use Tampa time for date calculations
+            # Calculate start date
             tampa_now = SymptomTrackingService.get_local_time()
             start_date = tampa_now - timedelta(days=days)
 
-            print(f"🔍 DEBUG - Date range for query:")
-            print(f"  Tampa now: {tampa_now}")
-            print(f"  Start date (Tampa): {start_date}")
-            print(f"  Days requested: {days}")
+            print(f"🔍 DEBUG - Querying from {start_date.date()} to {tampa_now.date()}")
 
-            # Convert to UTC for database query
-            start_date_utc = SymptomTrackingService.local_to_utc(start_date)
-
+            # FIXED: Since created_at is stored as EST but contains UTC values,
+            # we need to treat it as UTC when converting to Tampa time
             query = text("""
                 SELECT 
                     symptom_name,
-                    DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern') as date,
+                    DATE(created_at AT TIME ZONE 'EST' AT TIME ZONE 'US/Eastern') as date,
                     AVG(intensity) as daily_avg_intensity,
                     COUNT(*) as daily_occurrences,
                     AVG(duration_minutes) as avg_duration
                 FROM symptom_intensity 
                 WHERE user_id = :user_id 
                 AND created_at >= :start_date
-                GROUP BY symptom_name, DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern')
+                GROUP BY symptom_name, DATE(created_at AT TIME ZONE 'EST' AT TIME ZONE 'US/Eastern')
                 ORDER BY date ASC, symptom_name
             """)
 
-            result = db.execute(
-                query, {"user_id": user_id, "start_date": start_date_utc}
-            )
+            result = db.execute(query, {"user_id": user_id, "start_date": start_date})
             rows = result.fetchall()
 
-            print(f"📊 Fetched {len(rows)} intensity records for user {user_id}")
+            print(f"📊 Fetched {len(rows)} intensity records")
 
-            # Debug: Show what dates we found
+            # Debug the dates found
             unique_dates = set(row.date for row in rows)
             print(f"📅 UNIQUE DATES FOUND: {sorted(unique_dates)}")
 
             for row in rows:
-                print(
-                    f"  - {row.date}: {row.symptom_name} (avg: {row.daily_avg_intensity:.1f}, count: {row.daily_occurrences})"
-                )
+                print(f"  - {row.date}: {row.symptom_name}")
 
             return rows
 
