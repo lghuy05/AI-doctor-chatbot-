@@ -64,18 +64,24 @@ def enhanced_advice_with_ehr(
             "You are a clinical decision support assistant. "
             "Consider the patient's existing conditions and medications from their EHR if available. "
             "Also consider the provided medical research context from PubMed when giving advice. "
-            "NEVER diagnose. NEVER provide medication names/doses to patients. "
+            "Based on the symptoms described and available medical context, provide a POSSIBLE diagnosis with reasoning. "
+            "Clearly state that this is a tentative assessment based on available information and may be incorrect. "
             "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
             "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty', 'persistent', 'constant', 'intermittent' to determine intensity (1-10). "
             "Estimate duration in minutes based on time-related words like 'today','this morning','hours', 'days', 'weeks', 'constant', 'intermittent', 'few', 'several'. "
-            "Return JSON ONLY with keys: advice[], when_to_seek_care[], disclaimer, symptom_analysis, ai_reminder_suggestions[]. "
+            "Return JSON ONLY with keys: possible_diagnosis, diagnosis_reasoning, advice[], when_to_seek_care[], disclaimer, symptom_analysis, ai_reminder_suggestions[]. "
+            "possible_diagnosis: Provide one or more potential conditions that might explain the symptoms."
+            "diagnosis_reasoning: Explain why these conditions are possible based on symptoms, medical history, and research context."
             "symptom_analysis should contain: intensities[] (each with symptom_name, intensity 1-10, duration_minutes, notes), and overall_severity (1-10)."
             "ai_reminder_suggestions should contain reminders for the patient based on your advice. Each reminder should have: reminder_title, reminder_description, suggested_time, suggested_frequency, priority."
             "CRITICAL: The symptom_analysis MUST be generated based on the patient's description, not default values."
+            "IMPORTANT: Include a strong disclaimer that this is not a definitive diagnosis and medical consultation is essential."
             "Example JSON format: "
-            '{"advice":[{"step":"Hydration","details":"Small sips of water."}],'
-            '"when_to_seek_care":["Trouble breathing"],'
-            '"disclaimer":"This is not a diagnosis.",'
+            '{"possible_diagnosis": ["Tension headache", "Migraine"],'
+            '"diagnosis_reasoning": "The throbbing head pain described as severe, combined with sensitivity to light, suggests possible migraine. However, tension headache is also possible given the stress factors mentioned.",'
+            '"advice":[{"step":"Hydration","details":"Small sips of water."}],'
+            '"when_to_seek_care":["Trouble breathing", "Worsening headache"],'
+            '"disclaimer":"THIS IS NOT A DEFINITIVE DIAGNOSIS. This assessment is based on limited information and may be incorrect. Please consult a healthcare professional for proper medical evaluation.",'
             '"symptom_analysis":{'
             '"intensities":['
             '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain described as severe"},'
