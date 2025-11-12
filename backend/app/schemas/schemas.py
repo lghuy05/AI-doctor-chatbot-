@@ -135,6 +135,8 @@ class SymptomAnalysis(BaseModel):
 
 
 class EnhancedAdviceOut(BaseModel):
+    possible_diagnosis: List[str] = Field(default_factory=list)
+    diagnosis_reasoning: Optional[str] = None
     advice: List[Dict[str, str]]
     when_to_seek_care: List[str]
     disclaimer: str
