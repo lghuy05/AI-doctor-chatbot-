@@ -69,28 +69,53 @@ def enhanced_advice_with_ehr(
             "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
             "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty', 'persistent', 'constant', 'intermittent' to determine intensity (1-10). "
             "Estimate duration in minutes based on time-related words like 'today','this morning','hours', 'days', 'weeks', 'constant', 'intermittent', 'few', 'several'. "
-            "Return JSON ONLY with keys: possible_diagnosis, diagnosis_reasoning, advice[], when_to_seek_care[], disclaimer, symptom_analysis, ai_reminder_suggestions[]. "
-            "possible_diagnosis: Provide one or more potential conditions that might explain the symptoms."
-            "diagnosis_reasoning: Explain why these conditions are possible based on symptoms, medical history, and research context."
-            "symptom_analysis should contain: intensities[] (each with symptom_name, intensity 1-10, duration_minutes, notes), and overall_severity (1-10)."
-            "ai_reminder_suggestions should contain reminders for the patient based on your advice. Each reminder should have: reminder_title, reminder_description, suggested_time, suggested_frequency, priority."
-            "CRITICAL: The symptom_analysis MUST be generated based on the patient's description, not default values."
-            "IMPORTANT: Include a strong disclaimer that this is not a definitive diagnosis and medical consultation is essential."
-            "Example JSON format: "
-            '{"possible_diagnosis": ["Tension headache", "Migraine"],'
-            '"diagnosis_reasoning": "The throbbing head pain described as severe, combined with sensitivity to light, suggests possible migraine. However, tension headache is also possible given the stress factors mentioned.",'
-            '"advice":[{"step":"Hydration","details":"Small sips of water."}],'
-            '"when_to_seek_care":["Trouble breathing", "Worsening headache"],'
-            '"disclaimer":"THIS IS NOT A DEFINITIVE DIAGNOSIS. This assessment is based on limited information and may be incorrect. Please consult a healthcare professional for proper medical evaluation.",'
-            '"symptom_analysis":{'
-            '"intensities":['
-            '{"symptom_name":"headache","intensity":7,"duration_minutes":120,"notes":"Throbbing pain described as severe"},'
-            '{"symptom_name":"nausea","intensity":4,"duration_minutes":45,"notes":"Intermittent mild nausea"}'
-            "],"
-            '"overall_severity":6},'
-            '"ai_reminder_suggestions":['
-            '{"reminder_title":"Drink water","reminder_description":"Small sips every 30 minutes","suggested_time":"08:00","suggested_frequency":"daily","priority":"medium"}'
-            "]}"
+            "CRITICAL: You MUST return valid JSON with EXACTLY these fields:\n"
+            "- possible_diagnosis: array of strings\n"
+            "- diagnosis_reasoning: string\n"
+            "- advice: array of objects with 'step' and 'details' strings\n"
+            "- when_to_seek_care: array of strings\n"
+            "- disclaimer: string\n"
+            "- symptom_analysis: object with 'intensities' array and 'overall_severity' number\n"
+            "- ai_reminder_suggestions: array of objects with these EXACT fields:\n"
+            "  * reminder_title: string (REQUIRED)\n"
+            "  * reminder_description: string (optional)\n"
+            "  * suggested_time: string (optional, format like '08:00' or 'morning')\n"
+            "  * suggested_frequency: string (optional, like 'daily', 'weekly')\n"
+            "  * priority: string (REQUIRED, must be 'low', 'medium', or 'high')\n\n"
+            "IMPORTANT RULES FOR JSON FORMAT:\n"
+            "1. Every field must be present, even if empty arrays/objects\n"
+            "2. All reminder objects MUST have 'reminder_title' and 'priority' at minimum\n"
+            "3. If you don't have a specific time, omit 'suggested_time' entirely\n"
+            "4. If you don't have frequency info, omit 'suggested_frequency' entirely\n"
+            "5. Do NOT include any fields not listed above\n\n"
+            "Example of valid JSON format:\n"
+            "{\n"
+            '  "possible_diagnosis": ["Tension headache", "Migraine"],\n'
+            '  "diagnosis_reasoning": "The throbbing head pain described as severe...",\n'
+            '  "advice": [{"step": "Hydration", "details": "Small sips of water."}],\n'
+            '  "when_to_seek_care": ["Trouble breathing", "Worsening headache"],\n'
+            '  "disclaimer": "THIS IS NOT A DEFINITIVE DIAGNOSIS...",\n'
+            '  "symptom_analysis": {\n'
+            '    "intensities": [\n'
+            '      {"symptom_name": "headache", "intensity": 7, "duration_minutes": 120, "notes": "Throbbing pain"}\n'
+            "    ],\n"
+            '    "overall_severity": 6\n'
+            "  },\n"
+            '  "ai_reminder_suggestions": [\n'
+            "    {\n"
+            '      "reminder_title": "Drink water",\n'
+            '      "reminder_description": "Small sips every 30 minutes",\n'
+            '      "suggested_time": "08:00",\n'
+            '      "suggested_frequency": "daily",\n'
+            '      "priority": "medium"\n'
+            "    },\n"
+            "    {\n"
+            '      "reminder_title": "Monitor symptoms",\n'
+            '      "priority": "high"\n'
+            "    }\n"
+            "  ]\n"
+            "}\n\n"
+            "STRICTLY FOLLOW THIS JSON FORMAT. DO NOT DEVIATE."
         )
         ehr_text = ""
         if ehr_context and (
