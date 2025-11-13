@@ -140,8 +140,7 @@ class SymptomTrackingService:
             # Calculate start date
             # tampa_now = SymptomTrackingService.get_local_time()
             # start_date = tampa_now - timedelta(days=days)
-            start_date = SymptomTrackingService.get_local_time() - timedelta(days=days)
-            start_date = SymptomTrackingService.local_to_utc(start_date)
+            start_date = datetime.now(timezone.utc) - timedelta(days=days)
             # print(f"🔍 DEBUG - Querying from {start_date.date()} to {tampa_now.date()}")
 
             # FIXED: Since created_at is stored as EST but contains UTC values,
@@ -149,14 +148,14 @@ class SymptomTrackingService:
             query = text("""
                 SELECT 
                     symptom_name,
-                    DATE(created_at) as date,  -- Just use the stored date directly
+                    DATE(created_at) as date,  
                     AVG(intensity) as daily_avg_intensity,
                     COUNT(*) as daily_occurrences,
                     AVG(duration_minutes) as avg_duration
                 FROM symptom_intensity 
                 WHERE user_id = :user_id 
                 AND created_at >= :start_date
-                GROUP BY symptom_name, DATE(created_at)
+                GROUP BY symptom_name, DATE(created_at)  
                 ORDER BY date ASC, symptom_name
             """)
 
@@ -194,7 +193,7 @@ class SymptomTrackingService:
                 SELECT 
                     symptom_name,
                     SUM(occurrence_count) as total_occurrences,
-                    MAX(last_occurrence AT TIME ZONE 'UTC' AT TIME ZONE 'US/Eastern') as last_occurrence
+                    MAX(last_occurrence) as last_occurrence  
                 FROM symptom_frequency 
                 WHERE user_id = :user_id
                 AND month_year >= :start_month

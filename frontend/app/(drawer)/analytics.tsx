@@ -88,6 +88,8 @@ export default function AnalyticsScreen() {
       return [];
     }
 
+    console.log('🔍 DEBUG - Raw dates from backend:', dates);
+
     // Get all symptoms that have data
     const symptomNames = Object.keys(symptoms);
 
@@ -99,28 +101,35 @@ export default function AnalyticsScreen() {
         return null;
       }
 
-      // FIXED: Sort data by Tampa date to ensure proper line connection
-      const sortedData = [...symptom.data].sort((a, b) =>
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
+      console.log(`📊 ${symptomName} raw data:`, symptom.data);
 
-      console.log(`📊 ${symptomName} data:`, sortedData);
+      // Create line data using the EXACT dates from backend (no timezone conversion)
+      const lineData = symptom.data.map((point, index) => {
+        // ✅ USE THE DATE AS-IS - NO TIMEZONE CONVERSION
+        const dateParts = point.date.split('-');
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+        const day = parseInt(dateParts[2]);
 
-      // FIXED: Use labelComponent for better date control
-      const lineData = sortedData.map((point, index) => {
-        const date = new Date(point.date + 'T00:00:00');
-        const month = date.toLocaleString('default', { month: 'short' });
-        const day = date.getDate();
-        const formattedDate = `${month} ${day}`;
+        // Create date in local timezone (this will display correctly)
+        const date = new Date(year, month, day);
+        const monthStr = date.toLocaleString('default', { month: 'short' });
+        const dayNum = date.getDate();
 
-        // Only show label for first, last, and every 2nd point to avoid crowding
-        const showLabel = index === 0 ||
-          index === sortedData.length - 1 ||
-          index % 2 === 0;
+        const formattedDate = `${monthStr} ${dayNum}`;
+
+        // Debug log
+        console.log(`  ${symptomName} point:`, {
+          original: point.date,
+          parsed: formattedDate,
+          intensity: point.intensity
+        });
+
+        // Only show label for first, last, and every 2nd point
+        const showLabel = index === 0 || index === symptom.data.length - 1 || index % 2 === 0;
 
         return {
           value: point.intensity,
-          // Use labelComponent instead of label for better control
           labelComponent: () => (
             showLabel ? (
               <View style={{ width: 40, marginTop: 10 }}>
@@ -213,7 +222,8 @@ export default function AnalyticsScreen() {
     yAxisLabelSuffix: "",
     formatYLabel: (value: number) => `${Math.round(value)}`,
     adjustToWidth: true,
-    scrollToEnd: true
+    scrollToEnd: true,
+    key: `chart-${primaryLineData.length}-${Date.now()}`
   }), [primaryLineData, lineDataSets[0]?.color]);
 
   const multiLineConfig = useMemo(() => ({
@@ -410,13 +420,30 @@ export default function AnalyticsScreen() {
             {/* Frequency list with last reported time */}
             <View style={analyticsStyles.frequencyList}>
               {data.symptomFrequency.slice(0, 5).map((item, index) => {
-                const lastReported = item.last_occurrence ?
-                  new Date(item.last_occurrence).toLocaleDateString('en-US', {
-                    timeZone: 'UTC',
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  }) : 'Never';
+                // ✅ SIMPLE FIX: Extract date part only
+                const getLastReported = (lastOccurrence: string) => {
+                  if (!lastOccurrence) return 'Never';
+
+                  try {
+                    // Extract just the date part (YYYY-MM-DD) from the timestamp
+                    const datePart = lastOccurrence.split('T')[0];
+                    const dateParts = datePart.split('-');
+                    const year = parseInt(dateParts[0]);
+                    const month = parseInt(dateParts[1]) - 1;
+                    const day = parseInt(dateParts[2]);
+
+                    const date = new Date(year, month, day);
+                    return date.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    });
+                  } catch {
+                    return 'Never';
+                  }
+                };
+
+                const lastReported = getLastReported(item.last_occurrence);
 
                 return (
                   <View key={item.symptom} style={analyticsStyles.frequencyItem}>
