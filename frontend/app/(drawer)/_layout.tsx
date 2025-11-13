@@ -1,10 +1,13 @@
-// app/(drawer)/_layout.tsx - FIXED VERSION
+// app/(drawer)/_layout.tsx - FIXED LOGOUT BUTTON
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { router, usePathname } from 'expo-router';
+import { logout } from '../../utils/auth';
+import { usePatientStore } from '../../hooks/usePatientStore';
 
 function CustomDrawerContent() {
   const pathname = usePathname();
+  const { clearPatientProfile } = usePatientStore();
 
   const menuItems = [
     { label: 'Dashboard', route: '/(drawer)/dashboard', icon: '📊' },
@@ -14,6 +17,38 @@ function CustomDrawerContent() {
     { label: 'Profile', route: '/(drawer)/profile', icon: '👤' },
   ];
 
+  const handleLogout = async () => {
+    console.log('🟡 Logout button pressed');
+
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => console.log('🟡 Logout cancelled')
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🟡 Logout confirmed - starting process');
+              clearPatientProfile();
+              await logout();
+              console.log('✅ Logout completed successfully');
+            } catch (error) {
+              console.error('❌ Logout error:', error);
+              // Force redirect even if there's an error
+              router.replace('/auth/login');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <View style={{ flex: 1, paddingTop: 60, backgroundColor: '#fff' }}>
       <View style={{ padding: 20, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' }}>
@@ -21,7 +56,7 @@ function CustomDrawerContent() {
         <Text style={{ fontSize: 14, color: '#64748B', marginTop: 4 }}>Your Medical Companion</Text>
       </View>
 
-      <View style={{ padding: 12 }}>
+      <View style={{ flex: 1, padding: 12 }}>
         {menuItems.map((item, index) => {
           const isActive = pathname === item.route ||
             (item.route === '/(drawer)' && pathname === '/(drawer)/index');
@@ -37,7 +72,10 @@ function CustomDrawerContent() {
                 marginBottom: 4,
                 backgroundColor: isActive ? '#EFF6FF' : 'transparent',
               }}
-              onPress={() => router.push(item.route as any)}
+              onPress={() => {
+                console.log(`🟡 Navigating to: ${item.route}`);
+                router.push(item.route as any);
+              }}
             >
               <Text style={{ fontSize: 20, marginRight: 12 }}>{item.icon}</Text>
               <Text style={{
@@ -50,6 +88,31 @@ function CustomDrawerContent() {
             </TouchableOpacity>
           );
         })}
+      </View>
+
+      {/* Logout Button at Bottom */}
+      <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: '#f0f0f0' }}>
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            borderRadius: 12,
+            backgroundColor: '#FEF2F2',
+          }}
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <Text style={{ fontSize: 20, marginRight: 12 }}>🚪</Text>
+          <Text style={{
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#DC2626'
+          }}>
+            Logout
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -67,6 +130,7 @@ export default function DrawerLayout() {
           width: 280,
         },
         swipeEnabled: true,
+        swipeEdgeWidth: 50, // Makes it easier to open drawer
       }}
     >
       <Drawer.Screen

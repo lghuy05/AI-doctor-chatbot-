@@ -104,22 +104,38 @@ export default function AnalyticsScreen() {
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 
-      console.log(`📊 ${symptomName} data:`, sortedData); // Debug log
+      console.log(`📊 ${symptomName} data:`, sortedData);
 
-      // FIXED: Create continuous data points with proper date formatting
-      const lineData = sortedData.map((point) => {
-        // Use the Tampa date directly from backend (format: "2025-11-12")
-        const date = new Date(point.date + 'T00:00:00'); // Add time to ensure proper parsing
+      // FIXED: Use labelComponent for better date control
+      const lineData = sortedData.map((point, index) => {
+        const date = new Date(point.date + 'T00:00:00');
         const month = date.toLocaleString('default', { month: 'short' });
         const day = date.getDate();
-
         const formattedDate = `${month} ${day}`;
+
+        // Only show label for first, last, and every 2nd point to avoid crowding
+        const showLabel = index === 0 ||
+          index === sortedData.length - 1 ||
+          index % 2 === 0;
 
         return {
           value: point.intensity,
-          label: formattedDate,
+          // Use labelComponent instead of label for better control
+          labelComponent: () => (
+            showLabel ? (
+              <View style={{ width: 40, marginTop: 10 }}>
+                <Text style={{
+                  color: 'gray',
+                  fontSize: 8,
+                  textAlign: 'center'
+                }}>
+                  {formattedDate}
+                </Text>
+              </View>
+            ) : null
+          ),
           dataPointText: point.intensity.toString(),
-          labelTextStyle: { color: 'gray', fontSize: 9 },
+          originalDate: point.date
         };
       });
 
@@ -143,6 +159,13 @@ export default function AnalyticsScreen() {
       text: `${item.percentage.toFixed(0)}%`,
     }));
   }, [data.symptomFrequency]);
+
+  // MOVE VARIABLE DECLARATIONS HERE - BEFORE useMemo HOOKS THAT USE THEM
+  const lineDataSets = getLineChartData;
+  const pieData = getPieChartData;
+  const hasLineData = lineDataSets.length > 0;
+  const primaryLineData = lineDataSets[0]?.data || [];
+
   // Add this debug useEffect to see your actual data
   useEffect(() => {
     if (lineDataSets.length > 0) {
@@ -155,25 +178,20 @@ export default function AnalyticsScreen() {
     }
   }, [lineDataSets]);
 
-  const lineDataSets = getLineChartData;
-  const pieData = getPieChartData;
-  const hasLineData = lineDataSets.length > 0;
-  const primaryLineData = lineDataSets[0]?.data || [];
-
-  // FIXED: Memoize chart configurations with better line connection
+  // FIXED: Memoize chart configurations with better date display
   const singleLineConfig = useMemo(() => ({
     data: primaryLineData,
-    spacing: 50,
+    spacing: 40, // Adjusted spacing
     thickness: 3,
     hideRules: false,
-    hideDataPoints: primaryLineData.length > 15, // Hide points if too many
+    hideDataPoints: false,
     color: lineDataSets[0]?.color || '#3B82F6',
     yAxisColor: "#3B82F6",
     xAxisColor: "#3B82F6",
     dataPointsColor: lineDataSets[0]?.color || '#3B82F6',
     dataPointsRadius: 4,
-    initialSpacing: 20,
-    endSpacing: 20,
+    initialSpacing: 15,
+    endSpacing: 15,
     height: 220,
     yAxisOffset: 0,
     noOfSections: 5,
@@ -181,9 +199,7 @@ export default function AnalyticsScreen() {
     isAnimated: true,
     animateOnDataChange: false,
     animationDuration: 1000,
-    showVerticalLines: true,
-    verticalLinesColor: "rgba(59, 130, 246, 0.1)",
-    verticalLinesThickness: 1,
+    showVerticalLines: false,
     xAxisLabelTextStyle: { color: 'gray', fontSize: 10 },
     yAxisTextStyle: { color: 'gray', fontSize: 12 },
     areaChart: false,
@@ -191,61 +207,54 @@ export default function AnalyticsScreen() {
     curvature: 0.2,
     strokeLinecap: "round",
     focusEnabled: false,
-    showValuesAsDataPointsText: false,
-    yAxisLabelWidth: 40,
+    showValuesAsDataPointsText: true,
+    yAxisLabelWidth: 30,
     yAxisLabelPrefix: "",
     yAxisLabelSuffix: "",
     formatYLabel: (value: number) => `${Math.round(value)}`,
-    // FIXED: Ensure lines connect properly
     adjustToWidth: true,
-    scrollToEnd: true,
-    showXAxisIndices: true,
-    xAxisIndicesHeight: 4,
-    xAxisIndicesWidth: 1,
-    xAxisIndicesColor: "rgba(0,0,0,0.2)"
+    scrollToEnd: true
   }), [primaryLineData, lineDataSets[0]?.color]);
 
   const multiLineConfig = useMemo(() => ({
     dataSet: lineDataSets.map((dataset, index) => ({
       data: dataset.data,
       color: dataset.color,
-      thickness: 3,
+      thickness: 2,
       curved: true,
-      hideDataPoints: dataset.data.length > 15, // Hide points if too many
+      hideDataPoints: false,
       dataPointsColor: dataset.color,
-      dataPointsRadius: 4,
-      // FIXED: Ensure each line connects properly
+      dataPointsRadius: 3,
       strokeDashArray: [],
       showValuesAsDataPointsText: false
     })),
-    spacing: 50,
+    spacing: 40,
     hideRules: false,
     yAxisColor: "#3B82F6",
     xAxisColor: "#3B82F6",
-    initialSpacing: 20,
-    endSpacing: 20,
+    initialSpacing: 15,
+    endSpacing: 15,
     height: 220,
     yAxisOffset: 0,
     noOfSections: 5,
     maxValue: 10,
     isAnimated: true,
-    showVerticalLines: true,
-    verticalLinesColor: "rgba(59, 130, 246, 0.1)",
+    showVerticalLines: false,
     xAxisLabelTextStyle: { color: 'gray', fontSize: 10 },
     yAxisTextStyle: { color: 'gray', fontSize: 12 },
     areaChart: false,
     curvature: 0.2,
     strokeLinecap: "round",
     focusEnabled: false,
-    yAxisLabelWidth: 40,
+    yAxisLabelWidth: 30,
     yAxisLabelPrefix: "",
     yAxisLabelSuffix: "",
     formatYLabel: (value: number) => `${Math.round(value)}`,
-    // FIXED: Better multi-line configuration
     adjustToWidth: true,
     scrollToEnd: true
   }), [lineDataSets]);
 
+  // FIXED: Memoize chart configurations with better date display
   const pieConfig = useMemo(() => ({
     data: pieData,
     donut: true,
@@ -353,7 +362,7 @@ export default function AnalyticsScreen() {
               </View>
             )}
 
-            <Text style={[analyticsStyles.cardSubtitle, { textAlign: 'center', marginTop: 10 }]}>
+            <Text style={[analyticsStyles.cardSubtitle, { textAlign: 'center', marginTop: 10, fontSize: 12 }]}>
               {lineDataSets.length === 1
                 ? `${lineDataSets[0].name} Intensity Over Time`
                 : 'Multiple Symptoms Intensity'
@@ -403,6 +412,7 @@ export default function AnalyticsScreen() {
               {data.symptomFrequency.slice(0, 5).map((item, index) => {
                 const lastReported = item.last_occurrence ?
                   new Date(item.last_occurrence).toLocaleDateString('en-US', {
+                    timeZone: 'UTC',
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'

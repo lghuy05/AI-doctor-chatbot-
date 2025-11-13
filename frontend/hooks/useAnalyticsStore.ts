@@ -109,8 +109,8 @@ export const useAnalyticsStore = create<AnalyticsStore>((set, get) => ({
   isLoading: false,
   error: null,
   timeRange: {
-    intensityDays: 30,
-    frequencyMonths: 6
+    intensityDays: 7,
+    frequencyMonths: 1
   },
   lastDataUpdate: null,
   autoRefresh: true,
