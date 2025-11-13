@@ -260,8 +260,8 @@ class ReminderResponse(ReminderBase):
 
 class AIReminderSuggestion(BaseModel):
     reminder_title: str
-    reminder_description: str
-    suggested_time: str  # e.g., "08:00", "after_meal", "morning"
+    reminder_description: Optional[str] = None
+    suggested_time: Optional[str] = None  # e.g., "08:00", "after_meal", "morning"
     suggested_frequency: Optional[str] = None  # e.g., "daily", "weekly", "once"
     priority: Literal["low", "medium", "high"] = "medium"
 

@@ -89,6 +89,7 @@ export default function AnalyticsScreen() {
     }
 
     console.log('🔍 DEBUG - Raw dates from backend:', dates);
+    console.log('🔍 DEBUG - All symptoms:', Object.keys(symptoms));
 
     // Get all symptoms that have data
     const symptomNames = Object.keys(symptoms);
@@ -103,53 +104,100 @@ export default function AnalyticsScreen() {
 
       console.log(`📊 ${symptomName} raw data:`, symptom.data);
 
-      // Create line data using the EXACT dates from backend (no timezone conversion)
-      const lineData = symptom.data.map((point, index) => {
+      // Create a map of date to intensity for this symptom
+      const symptomDataMap = new Map();
+      symptom.data.forEach(point => {
+        symptomDataMap.set(point.date, point.intensity);
+      });
+
+      // Create line data for ALL dates in the range, filling gaps with null
+      const lineData = dates.map((date, index) => {
+        const intensity = symptomDataMap.get(date);
+
         // ✅ USE THE DATE AS-IS - NO TIMEZONE CONVERSION
-        const dateParts = point.date.split('-');
+        const dateParts = date.split('-');
         const year = parseInt(dateParts[0]);
         const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
         const day = parseInt(dateParts[2]);
 
         // Create date in local timezone (this will display correctly)
-        const date = new Date(year, month, day);
-        const monthStr = date.toLocaleString('default', { month: 'short' });
-        const dayNum = date.getDate();
+        const dateObj = new Date(year, month, day);
+        const monthStr = dateObj.toLocaleString('default', { month: 'short' });
+        const dayNum = dateObj.getDate();
 
         const formattedDate = `${monthStr} ${dayNum}`;
 
-        // Debug log
-        console.log(`  ${symptomName} point:`, {
-          original: point.date,
-          parsed: formattedDate,
-          intensity: point.intensity
-        });
-
         // Only show label for first, last, and every 2nd point
-        const showLabel = index === 0 || index === symptom.data.length - 1 || index % 2 === 0;
+        const showLabel = index === 0 || index === dates.length - 1 || index % 2 === 0;
 
-        return {
-          value: point.intensity,
-          labelComponent: () => (
-            showLabel ? (
-              <View style={{ width: 40, marginTop: 10 }}>
-                <Text style={{
-                  color: 'gray',
-                  fontSize: 8,
-                  textAlign: 'center'
-                }}>
-                  {formattedDate}
-                </Text>
-              </View>
-            ) : null
-          ),
-          dataPointText: point.intensity.toString(),
-          originalDate: point.date
-        };
+        // If symptom has data for this date, use it. Otherwise, use null to create a gap
+        if (intensity !== undefined) {
+          console.log(`  ${symptomName} on ${date}:`, { intensity, formattedDate });
+
+          return {
+            value: intensity,
+            labelComponent: () => (
+              showLabel ? (
+                <View style={{ width: 40, marginTop: 10 }}>
+                  <Text style={{
+                    color: 'gray',
+                    fontSize: 8,
+                    textAlign: 'center'
+                  }}>
+                    {formattedDate}
+                  </Text>
+                </View>
+              ) : null
+            ),
+            dataPointText: intensity.toString(),
+            originalDate: date,
+            // Add metadata for debugging
+            meta: { symptom: symptomName, date: date, hasData: true }
+          };
+        } else {
+          // Create a gap point (this will break the line)
+          console.log(`  ${symptomName} on ${date}: NO DATA (gap)`);
+
+          return {
+            value: 0, // Use 0 or any value, but the line will break due to hideDataPoints
+            hideDataPoint: true, // Hide the point
+            labelComponent: () => (
+              showLabel ? (
+                <View style={{ width: 40, marginTop: 10 }}>
+                  <Text style={{
+                    color: 'gray',
+                    fontSize: 8,
+                    textAlign: 'center'
+                  }}>
+                    {formattedDate}
+                  </Text>
+                </View>
+              ) : null
+            ),
+            originalDate: date,
+            // Add metadata for debugging
+            meta: { symptom: symptomName, date: date, hasData: false }
+          };
+        }
+      });
+
+      // Filter out gap points to create proper line breaks
+      const filteredLineData = lineData.map(point => {
+        if (point.meta?.hasData) {
+          return point;
+        } else {
+          // Return a special point that will break the line
+          return {
+            ...point,
+            value: 0, // Use a value that won't affect the chart scale much
+            hideDataPoint: true,
+            disablePress: true
+          };
+        }
       });
 
       return {
-        data: lineData,
+        data: filteredLineData,
         color: symptom.color || '#3B82F6',
         name: symptomName
       };
@@ -236,7 +284,10 @@ export default function AnalyticsScreen() {
       dataPointsColor: dataset.color,
       dataPointsRadius: 3,
       strokeDashArray: [],
-      showValuesAsDataPointsText: false
+      showValuesAsDataPointsText: false,
+      // Add these properties to handle gaps
+      focusEnabled: true,
+      isAnimated: true
     })),
     spacing: 40,
     hideRules: false,
@@ -261,7 +312,9 @@ export default function AnalyticsScreen() {
     yAxisLabelSuffix: "",
     formatYLabel: (value: number) => `${Math.round(value)}`,
     adjustToWidth: true,
-    scrollToEnd: true
+    scrollToEnd: true,
+    // Important: This ensures proper date alignment
+    xAxisIndices: true
   }), [lineDataSets]);
 
   // FIXED: Memoize chart configurations with better date display
