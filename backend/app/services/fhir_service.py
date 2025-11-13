@@ -28,6 +28,9 @@ class FHIRService:
     @staticmethod
     def get_patient_profile(patient_id: str) -> Optional[Dict]:
         """Get comprehensive patient profile for display"""
+        # Mock data for patient ID "example"
+        if patient_id == "example":
+            return FHIRService._get_mock_patient_data()
         try:
             # Get patient basic info
             patient_response = requests.get(
@@ -81,6 +84,50 @@ class FHIRService:
         except Exception as e:
             print(f"❌ FHIR API error: {e}")
             return None
+
+    @staticmethod
+    def _get_mock_patient_data() -> Dict:
+        """Return mock data for patient ID 'example'"""
+        mock_profile = {
+            "id": "example",
+            "name": "John Smith",
+            "birth_date": "1985-03-15",
+            "age": 39,
+            "gender": "Male",
+            "contact": {"email": "john.smith@example.com", "phone": "(555) 123-4567"},
+            "active_medications": [
+                {
+                    "name": "Lisinopril",
+                    "status": "active",
+                    "prescribed_date": "2024-01-15",
+                    "prescriber": "Dr. Sarah Wilson",
+                },
+                {
+                    "name": "Atorvastatin",
+                    "status": "active",
+                    "prescribed_date": "2024-02-20",
+                    "prescriber": "Dr. Sarah Wilson",
+                },
+            ],
+            "medical_conditions": [
+                {
+                    "name": "Hypertension",
+                    "status": "Active",
+                    "recorded_date": "2023-05-10",
+                },
+                {
+                    "name": "Hyperlipidemia",
+                    "status": "Active",
+                    "recorded_date": "2023-06-15",
+                },
+            ],
+            "last_updated": datetime.now().isoformat(),
+        }
+
+        print(f"✅ Mock EHR data fetched for patient: {mock_profile['name']}")
+        print(f"   💊 Medications: {len(mock_profile['active_medications'])}")
+        print(f"   🩺 Conditions: {len(mock_profile['medical_conditions'])}")
+        return mock_profile
 
     @staticmethod
     def _extract_patient_name(patient_data: Dict) -> str:
