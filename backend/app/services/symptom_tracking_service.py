@@ -138,24 +138,25 @@ class SymptomTrackingService:
         """Get symptom intensity history - FIXED FOR TIMEZONE CONFUSION"""
         try:
             # Calculate start date
-            tampa_now = SymptomTrackingService.get_local_time()
-            start_date = tampa_now - timedelta(days=days)
-
-            print(f"🔍 DEBUG - Querying from {start_date.date()} to {tampa_now.date()}")
+            # tampa_now = SymptomTrackingService.get_local_time()
+            # start_date = tampa_now - timedelta(days=days)
+            start_date = SymptomTrackingService.get_local_time() - timedelta(days=days)
+            start_date = SymptomTrackingService.local_to_utc(start_date)
+            # print(f"🔍 DEBUG - Querying from {start_date.date()} to {tampa_now.date()}")
 
             # FIXED: Since created_at is stored as EST but contains UTC values,
             # we need to treat it as UTC when converting to Tampa time
             query = text("""
                 SELECT 
                     symptom_name,
-                    DATE(created_at AT TIME ZONE 'EST' AT TIME ZONE 'US/Eastern') as date,
+                    DATE(created_at) as date,  -- Just use the stored date directly
                     AVG(intensity) as daily_avg_intensity,
                     COUNT(*) as daily_occurrences,
                     AVG(duration_minutes) as avg_duration
                 FROM symptom_intensity 
                 WHERE user_id = :user_id 
                 AND created_at >= :start_date
-                GROUP BY symptom_name, DATE(created_at AT TIME ZONE 'EST' AT TIME ZONE 'US/Eastern')
+                GROUP BY symptom_name, DATE(created_at)
                 ORDER BY date ASC, symptom_name
             """)
 
