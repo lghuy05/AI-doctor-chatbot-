@@ -15,29 +15,87 @@ class MapsService:
         latitude: float,
         longitude: float,
         provider_type: str,
-        radius: int = 15000,
+        radius: int = 20000,  # Increased to 20km
         max_results: int = 5,
     ) -> List[Dict[str, Any]]:
-        """
-        Get nearby healthcare providers using Google Places API
-        """
         if not self.api_key:
             print("⚠️ Google Maps API key not configured")
             return []
 
         try:
-            # Search for places
+            print(f"🔍 Searching for '{provider_type}' at {latitude},{longitude}")
+
+            # Better specialty mappings for Google Places
+            specialty_mappings = {
+                "ophthalmologist": "eye doctor ophthalmologist",
+                "optometrist": "eye doctor optometrist",
+                "cardiologist": "cardiologist heart doctor",
+                "dermatologist": "dermatologist skin doctor",
+                "neurologist": "neurologist brain doctor",
+                "gastroenterologist": "gastroenterologist stomach doctor",
+                "orthopedist": "orthopedist bone doctor",
+                "primary_care": "primary care doctor family doctor",
+                "hospital": "hospital emergency",
+            }
+
+            search_keyword = specialty_mappings.get(provider_type, provider_type)
+
+            # Try multiple search strategies
             search_url = f"{self.base_url}/nearbysearch/json"
+
+            # Strategy 1: Health type with broader search
             params = {
                 "key": self.api_key,
                 "location": f"{latitude},{longitude}",
                 "radius": radius,
-                "type": "doctor",
-                "keyword": provider_type,
+                "type": "health",  # Use "health" instead of "doctor" - it's broader
+                "keyword": f"{search_keyword} medical",  # Add "medical" for better results
             }
+
+            print(f"🔍 Search params: type=health, keyword={search_keyword}")
 
             response = requests.get(search_url, params=params, timeout=10)
             data = response.json()
+
+            print(
+                f"📋 API Status: {data.get('status')}, Results: {len(data.get('results', []))}"
+            )
+
+            # If no results, try doctor type
+            if data.get("status") == "ZERO_RESULTS":
+                print("🔄 Trying fallback with type=doctor...")
+                params_fallback = {
+                    "key": self.api_key,
+                    "location": f"{latitude},{longitude}",
+                    "radius": radius,
+                    "type": "doctor",
+                    "keyword": search_keyword,
+                }
+                response_fallback = requests.get(
+                    search_url, params=params_fallback, timeout=10
+                )
+                data_fallback = response_fallback.json()
+                print(
+                    f"📋 Fallback Status: {data_fallback.get('status')}, Results: {len(data_fallback.get('results', []))}"
+                )
+                data = data_fallback
+
+            # If still no results, try hospital type for emergencies
+            if data.get("status") == "ZERO_RESULTS" and provider_type == "hospital":
+                print("🔄 Trying hospital search...")
+                params_hospital = {
+                    "key": self.api_key,
+                    "location": f"{latitude},{longitude}",
+                    "radius": radius,
+                    "type": "hospital",
+                }
+                response_hospital = requests.get(
+                    search_url, params=params_hospital, timeout=10
+                )
+                data = response_hospital.json()
+                print(
+                    f"📋 Hospital Status: {data.get('status')}, Results: {len(data.get('results', []))}"
+                )
 
             if data.get("status") != "OK":
                 print(f"⚠️ Google Places API error: {data.get('status')}")
@@ -45,9 +103,45 @@ class MapsService:
 
             places = data.get("results", [])[:max_results]
 
-            # Enrich with details and distance
-            enriched_places = []
+            # Filter for relevant providers based on name and types
+            relevant_places = []
             for place in places:
+                place_name = place.get("name", "").lower()
+                place_types = place.get("types", [])
+
+                # Check if this place is relevant to our search
+                is_relevant = False
+
+                if provider_type == "ophthalmologist":
+                    is_relevant = any(
+                        term in place_name
+                        for term in ["eye", "vision", "retina", "ophthalm", "optom"]
+                    )
+                elif provider_type == "neurologist":
+                    is_relevant = any(
+                        term in place_name
+                        for term in ["neuro", "brain", "spine", "nerve"]
+                    )
+                elif provider_type == "cardiologist":
+                    is_relevant = any(
+                        term in place_name for term in ["cardio", "heart", "vascular"]
+                    )
+                elif provider_type == "dermatologist":
+                    is_relevant = any(
+                        term in place_name for term in ["derm", "skin", "cosmetic"]
+                    )
+                else:
+                    # For other types, be less restrictive
+                    is_relevant = True
+
+                if is_relevant:
+                    relevant_places.append(place)
+
+            print(f"✅ Filtered to {len(relevant_places)} relevant providers")
+
+            # Enrich results
+            enriched_places = []
+            for place in relevant_places:
                 enriched_place = self._enrich_place_details(place, latitude, longitude)
                 if enriched_place:
                     enriched_places.append(enriched_place)
@@ -56,6 +150,9 @@ class MapsService:
 
         except Exception as e:
             print(f"❌ Error fetching healthcare providers: {e}")
+            import traceback
+
+            traceback.print_exc()
             return []
 
     def _enrich_place_details(
