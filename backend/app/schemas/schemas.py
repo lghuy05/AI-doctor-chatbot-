@@ -57,7 +57,7 @@ class SymptomInput(BaseModel):
     duration: Optional[str] = Field(None, description="e.g., '2 days'")
     patient_id: Optional[str] = None
     latitude: Optional[float] = Field(None, description="user location latitude")
-    longtitude: Optional[float] = Field(None, description="user location longtitude")
+    longitude: Optional[float] = Field(None, description="user location longitude")
 
 
 # ------------------------------------------------------
@@ -290,4 +290,4 @@ class HealthcareRecommendations(BaseModel):
 
 class EnhancedAdviceOutWithReminders(EnhancedAdviceOut):
     ai_reminder_suggestions: List[AIReminderSuggestion] = []
-    HealthcareRecommendations: Optional[HealthcareRecommendations] = None
+    healthcare_recommendations: Optional[HealthcareRecommendations] = None
