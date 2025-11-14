@@ -27,15 +27,15 @@ class MapsService:
 
             # Better specialty mappings for Google Places
             specialty_mappings = {
-                "ophthalmologist": "eye doctor ophthalmologist",
-                "optometrist": "eye doctor optometrist",
-                "cardiologist": "cardiologist heart doctor",
-                "dermatologist": "dermatologist skin doctor",
-                "neurologist": "neurologist brain doctor",
-                "gastroenterologist": "gastroenterologist stomach doctor",
-                "orthopedist": "orthopedist bone doctor",
-                "primary_care": "primary care doctor family doctor",
-                "hospital": "hospital emergency",
+                "ophthalmologist": "ophthalmologist",
+                "optometrist": "optometrist",
+                "cardiologist": "cardiologist",
+                "dermatologist": "dermatologist",
+                "neurologist": "neurologist",
+                "gastroenterologist": "gastroenterologist",
+                "orthopedist": "orthopedist",
+                "primary_care": "primary care phycisian",
+                "hospital": "hospital",
             }
 
             search_keyword = specialty_mappings.get(provider_type, provider_type)
@@ -48,14 +48,24 @@ class MapsService:
                 "key": self.api_key,
                 "location": f"{latitude},{longitude}",
                 "radius": radius,
-                "type": "health",  # Use "health" instead of "doctor" - it's broader
-                "keyword": f"{search_keyword} medical",  # Add "medical" for better results
+                "type": "doctor",  # Use "health" instead of "doctor" - it's broader
+                "keyword": provider_type,  # Add "medical" for better results
             }
 
             print(f"🔍 Search params: type=health, keyword={search_keyword}")
 
             response = requests.get(search_url, params=params, timeout=10)
             data = response.json()
+
+            print(f"🔍 Raw API response status: {data.get('status')}")
+            if data.get("results"):
+                print(f"🔍 Raw results count: {len(data['results'])}")
+                for i, place in enumerate(data["results"][:3]):
+                    print(
+                        f"   {i + 1}. {place.get('name')} - types: {place.get('types')}"
+                    )
+            else:
+                print("🔍 No raw results found")
 
             print(
                 f"📋 API Status: {data.get('status')}, Results: {len(data.get('results', []))}"
@@ -104,38 +114,7 @@ class MapsService:
             places = data.get("results", [])[:max_results]
 
             # Filter for relevant providers based on name and types
-            relevant_places = []
-            for place in places:
-                place_name = place.get("name", "").lower()
-                place_types = place.get("types", [])
-
-                # Check if this place is relevant to our search
-                is_relevant = False
-
-                if provider_type == "ophthalmologist":
-                    is_relevant = any(
-                        term in place_name
-                        for term in ["eye", "vision", "retina", "ophthalm", "optom"]
-                    )
-                elif provider_type == "neurologist":
-                    is_relevant = any(
-                        term in place_name
-                        for term in ["neuro", "brain", "spine", "nerve"]
-                    )
-                elif provider_type == "cardiologist":
-                    is_relevant = any(
-                        term in place_name for term in ["cardio", "heart", "vascular"]
-                    )
-                elif provider_type == "dermatologist":
-                    is_relevant = any(
-                        term in place_name for term in ["derm", "skin", "cosmetic"]
-                    )
-                else:
-                    # For other types, be less restrictive
-                    is_relevant = True
-
-                if is_relevant:
-                    relevant_places.append(place)
+            relevant_places = places
 
             print(f"✅ Filtered to {len(relevant_places)} relevant providers")
 
