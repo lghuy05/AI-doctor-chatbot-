@@ -18,6 +18,12 @@ class MapsService:
         radius: int = 20000,  # Increased to 20km
         max_results: int = 5,
     ) -> List[Dict[str, Any]]:
+        # Debug the actual parameters received
+        print(f"🔧 DEBUG: radius parameter received: {radius}")
+        print(
+            f"🔧 DEBUG: all params - lat:{latitude}, lng:{longitude}, type:{provider_type}, radius:{radius}, max_results:{max_results}"
+        )
+
         print(f"🔑 API Key being used: {self.api_key}")
         print(f"🔑 API Key length: {len(self.api_key) if self.api_key else 'None'}")
 
@@ -36,7 +42,7 @@ class MapsService:
                 "neurologist": "neurologist",
                 "gastroenterologist": "gastroenterologist",
                 "orthopedist": "orthopedist",
-                "primary_care": "primary care phycisian",
+                "primary_care": "primary care physician",  # Fixed typo
                 "hospital": "hospital",
             }
 
@@ -47,19 +53,18 @@ class MapsService:
 
             # Strategy 1: Health type with broader search
             params = {
-                "key": self.api_key,
+                "key": self.api_key.strip(),  # Strip any whitespace/newlines from API key
                 "location": f"{latitude},{longitude}",
                 "radius": radius,
-                "type": "doctor",  # Use "health" instead of "doctor" - it's broader
-                "keyword": search_keyword,  # Add "medical" for better results
+                "type": "doctor",
+                "keyword": search_keyword,
             }
 
-            print(f"🔍 Search params: type=doctor, keyword={search_keyword}")
-            print(f"🔍 EXACT REQUEST URL: {search_url}")
-            print(f"🔍 EXACT PARAMS: {params}")
             print(
-                f"🔍 Full URL would be: {search_url}?{'&'.join([f'{k}={v}' for k, v in params.items()])}"
+                f"🔍 Search params: type=doctor, keyword={search_keyword}, radius={radius}"
             )
+            print(f"🔍 EXACT REQUEST URL: {search_url}")
+            print(f"🔍 EXACT PARAMS: location={latitude},{longitude}, radius={radius}")
 
             response = requests.get(search_url, params=params, timeout=10)
             data = response.json()
@@ -82,7 +87,7 @@ class MapsService:
             if data.get("status") == "ZERO_RESULTS":
                 print("🔄 Trying fallback with type=doctor...")
                 params_fallback = {
-                    "key": self.api_key,
+                    "key": self.api_key.strip(),
                     "location": f"{latitude},{longitude}",
                     "radius": radius,
                     "type": "doctor",
@@ -101,7 +106,7 @@ class MapsService:
             if data.get("status") == "ZERO_RESULTS" and provider_type == "hospital":
                 print("🔄 Trying hospital search...")
                 params_hospital = {
-                    "key": self.api_key,
+                    "key": self.api_key.strip(),
                     "location": f"{latitude},{longitude}",
                     "radius": radius,
                     "type": "hospital",
@@ -128,7 +133,7 @@ class MapsService:
             # Enrich results
             enriched_places = []
             for place in relevant_places:
-                enriched_place = self._enrich_place_details(place, latitude, longitude)
+                enriched_place = self._enrich_place_details(place)
                 if enriched_place:
                     enriched_places.append(enriched_place)
 
@@ -141,32 +146,22 @@ class MapsService:
             traceback.print_exc()
             return []
 
-    def _enrich_place_details(
-        self, place: Dict[str, Any], user_lat: float, user_lng: float
-    ) -> Optional[Dict[str, Any]]:
+    def _enrich_place_details(self, place: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        Enrich place with additional details and distance calculation
+        Enrich place with additional details - SIMPLIFIED VERSION
         """
         try:
             # Get place details for additional info
             details_url = f"{self.base_url}/details/json"
             params = {
-                "key": self.api_key,
+                "key": self.api_key.strip(),
                 "place_id": place["place_id"],
                 "fields": "formatted_phone_number,website,opening_hours,rating,user_ratings_total",
             }
 
             details_response = requests.get(details_url, params=params, timeout=10)
             details_data = details_response.json()
-
             place_details = details_data.get("result", {})
-
-            # Calculate distance
-            place_lat = place["geometry"]["location"]["lat"]
-            place_lng = place["geometry"]["location"]["lng"]
-            distance_km = self._calculate_distance(
-                user_lat, user_lng, place_lat, place_lng
-            )
 
             return {
                 "name": place.get("name"),
@@ -176,7 +171,6 @@ class MapsService:
                 "rating": place_details.get("rating"),
                 "total_ratings": place_details.get("user_ratings_total"),
                 "open_now": place_details.get("opening_hours", {}).get("open_now"),
-                "distance_km": round(distance_km, 1),
                 "place_id": place.get("place_id"),
                 "types": place.get("types", []),
                 "google_maps_url": f"https://www.google.com/maps/place/?q=place_id:{place['place_id']}",
@@ -188,38 +182,16 @@ class MapsService:
             return {
                 "name": place.get("name"),
                 "address": place.get("vicinity"),
-                "distance_km": 0,
                 "place_id": place.get("place_id"),
                 "google_maps_url": f"https://www.google.com/maps/place/?q=place_id:{place['place_id']}",
             }
-
-    def _calculate_distance(
-        self, lat1: float, lng1: float, lat2: float, lng2: float
-    ) -> float:
-        """
-        Calculate approximate distance between two points using Haversine formula
-        """
-        R = 6371  # Earth radius in kilometers
-
-        lat1_rad = math.radians(lat1)
-        lat2_rad = math.radians(lat2)
-        delta_lat = math.radians(lat2 - lat1)
-        delta_lng = math.radians(lng2 - lng1)
-
-        a = (
-            math.sin(delta_lat / 2) ** 2
-            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lng / 2) ** 2
-        )
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-        return R * c
 
     def geocode_zipcode(self, zipcode: str) -> Optional[tuple[float, float]]:
         """Convert zipcode to coordinates"""
         try:
             url = f"https://maps.googleapis.com/maps/api/geocode/json"
             params = {
-                "key": self.api_key,
+                "key": self.api_key.strip(),  # Strip any whitespace/newlines
                 "address": zipcode,
                 "components": "country:US",
             }
@@ -246,7 +218,9 @@ class MapsService:
             return []
 
         lat, lng = coords
-        return self.get_nearby_healthcare_providers(lat, lng, specialty, max_results)
+        return self.get_nearby_healthcare_providers(
+            lat, lng, specialty, radius=20000, max_results=max_results
+        )
 
 
 # Singleton instance
