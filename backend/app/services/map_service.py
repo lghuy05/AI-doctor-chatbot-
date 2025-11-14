@@ -49,11 +49,10 @@ class MapsService:
                 "location": f"{latitude},{longitude}",
                 "radius": radius,
                 "type": "doctor",  # Use "health" instead of "doctor" - it's broader
-                "keyword": provider_type,  # Add "medical" for better results
+                "keyword": search_keyword,  # Add "medical" for better results
             }
 
-            print(f"🔍 Search params: type=health, keyword={search_keyword}")
-
+            print(f"🔍 Search params: type=doctor, keyword={search_keyword}")
             response = requests.get(search_url, params=params, timeout=10)
             data = response.json()
 
