@@ -56,6 +56,8 @@ class SymptomInput(BaseModel):
     conditions: List[str] = Field(default_factory=list, description="Known conditions")
     duration: Optional[str] = Field(None, description="e.g., '2 days'")
     patient_id: Optional[str] = None
+    latitude: Optional[float] = Field(None, description="user location latitude")
+    longtitude: Optional[float] = Field(None, description="user location longtitude")
 
 
 # ------------------------------------------------------
@@ -266,5 +268,26 @@ class AIReminderSuggestion(BaseModel):
     priority: Literal["low", "medium", "high"] = "medium"
 
 
+class HealthcareProvider(BaseModel):
+    name: str
+    address: str
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    rating: Optional[float] = None
+    total_ratings: Optional[int] = None
+    open_now: Optional[bool] = None
+    distance_km: float
+    place_id: str
+    types: List[str] = []
+    google_maps_url: str
+
+
+class HealthcareRecommendations(BaseModel):
+    providers: List[HealthcareProvider]
+    recommendation_reason: str
+    provider_type: str
+
+
 class EnhancedAdviceOutWithReminders(EnhancedAdviceOut):
     ai_reminder_suggestions: List[AIReminderSuggestion] = []
+    HealthcareRecommendations: Optional[HealthcareRecommendations] = None

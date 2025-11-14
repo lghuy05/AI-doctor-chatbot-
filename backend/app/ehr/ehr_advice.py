@@ -7,6 +7,8 @@ from app.schemas.schemas import (
     SymptomInput,
     EnhancedAdviceOut,
     SymptomIntensityCreate,
+    HealthcareRecommendations,
+    HealthcareProvider,
 )
 from app.services.fhir_service import FHIRService
 from app.services.triage_service import triage_rules
@@ -14,6 +16,8 @@ from app.services.llm_service import require_json_with_retry
 from app.services.symptom_tracking_service import SymptomTrackingService
 from app.services.rag_service import get_medical_context
 from app.services.auth_service import get_current_user
+from app.services.map_service import maps_service
+from app.services.healthcare_analyzer import analyze_healthcare_needs
 
 router = APIRouter()
 
@@ -172,7 +176,7 @@ def enhanced_advice_with_ehr(
             {"role": "user", "content": user},
         ]
 
-    print("🤖 Generating advice with EHR context...")
+    print("🤖 Generating medical advice with EHR context...")
     response = require_json_with_retry(build_messages)
 
     # 4. Store symptom intensity data in database - WITH FALLBACK LOGIC
@@ -220,7 +224,67 @@ def enhanced_advice_with_ehr(
 
     print(f"📊 Recorded {stored_count} symptom intensities")
 
-    return response
+    # 5. Smart healthcare provider recommendations (NEW)
+    healthcare_recommendations = None
+
+    # Get user's location from EHR data
+    user_zipcode = ehr_data.get("zipcode")
+
+    if user_zipcode:
+        print(f"📍 User location from EHR: {user_zipcode}")
+
+        # Use SEPARATE prompt to analyze healthcare needs
+        healthcare_analysis = analyze_healthcare_needs(inp.symptoms)
+        needed_specialty = healthcare_analysis.get("needed_specialty", "primary_care")
+        urgency = healthcare_analysis.get("urgency", "routine")
+
+        print(f"🩺 Healthcare analysis: {needed_specialty} (urgency: {urgency})")
+        print(
+            f"   Reasoning: {healthcare_analysis.get('reasoning', 'No reasoning provided')}"
+        )
+
+        # Only recommend if not emergency and specific specialty needed
+        if urgency != "emergency" and needed_specialty != "primary_care":
+            print(
+                f"🔍 Searching for {needed_specialty} providers near {user_zipcode}..."
+            )
+            providers = maps_service.get_providers_by_zipcode(
+                zipcode=user_zipcode, specialty=needed_specialty, max_results=3
+            )
+
+            if providers:
+                healthcare_recommendations = HealthcareRecommendations(
+                    providers=providers,
+                    recommendation_reason=healthcare_analysis.get(
+                        "reasoning",
+                        f"Based on your symptoms, consider seeing a {needed_specialty}",
+                    ),
+                    provider_type=needed_specialty,
+                )
+                print(
+                    f"✅ Found {len(providers)} {needed_specialty} providers near {user_zipcode}"
+                )
+            else:
+                print(f"❌ No {needed_specialty} providers found near {user_zipcode}")
+        else:
+            if urgency == "emergency":
+                print("🚨 Emergency situation - skipping provider recommendations")
+            elif needed_specialty == "primary_care":
+                print(
+                    "🏥 General symptoms - primary care recommended, skipping specialist search"
+                )
+    else:
+        print("❌ No user location available in EHR data")
+
+    # Combine responses
+    response_data = dict(response)
+    if healthcare_recommendations:
+        response_data["healthcare_recommendations"] = healthcare_recommendations
+        print("🎯 Added healthcare recommendations to response")
+    else:
+        print("ℹ️ No healthcare recommendations to add")
+
+    return response_data
 
 
 def create_fallback_symptom_analysis(symptoms: str, duration: str) -> list:

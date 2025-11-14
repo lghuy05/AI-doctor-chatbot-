@@ -122,6 +122,7 @@ class FHIRService:
                 },
             ],
             "last_updated": datetime.now().isoformat(),
+            "zipcode": "33620",
         }
 
         print(f"✅ Mock EHR data fetched for patient: {mock_profile['name']}")
