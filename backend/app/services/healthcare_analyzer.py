@@ -38,7 +38,7 @@ def analyze_healthcare_needs(symptoms: str) -> dict:
     ]
 
     try:
-        response = require_json_with_retry(prompt)
+        response = require_json_with_retry(lambda: prompt)
         return response
     except Exception as e:
         print(f"❌ LLM healthcare analysis failed: {e}")
