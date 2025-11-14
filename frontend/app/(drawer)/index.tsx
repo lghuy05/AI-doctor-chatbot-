@@ -10,6 +10,7 @@ import { chatStyles } from '../styles/chatStyles';
 import api from '../../api/client';
 import { usePatientStore } from '../../hooks/usePatientStore';
 import { useChatStore, ChatMessage } from '../../hooks/useChatStore';
+import HealthcareProvidersCard from '../../components/HealthcareProvidersCard';
 
 interface AIReminderSuggestion {
   reminder_title: string;
@@ -26,6 +27,26 @@ interface CustomReminderData {
   days_of_week: string[];
   is_recurring: boolean;
   recurrence_pattern: string;
+}
+
+interface HealthcareProvider {
+  name: string;
+  address: string;
+  phone: string | null;
+  website: string | null;
+  rating: number | null;
+  total_ratings: number | null;
+  open_now: boolean | null;
+  distance_km: number;
+  place_id: string;
+  types: string[];
+  google_maps_url: string;
+}
+
+interface HealthcareRecommendations {
+  providers: HealthcareProvider[];
+  recommendation_reason: string;
+  provider_type: string;
 }
 
 interface AIResponse {
@@ -47,6 +68,7 @@ interface AIResponse {
     overall_severity: number;
   };
   ai_reminder_suggestions?: AIReminderSuggestion[];
+  healthcare_recommendations?: HealthcareRecommendations;
 }
 
 export default function ChatIntroScreen() {
@@ -524,6 +546,13 @@ export default function ChatIntroScreen() {
             <View style={[chatStyles.card, chatStyles.disclaimerCard]}>
               <Text style={chatStyles.disclaimerText}>{chat.aiResponse.disclaimer}</Text>
             </View>
+          )}
+
+          {/* Healthcare Recommendations - NEW */}
+          {chat.aiResponse.healthcare_recommendations && (
+            <HealthcareProvidersCard
+              recommendations={chat.aiResponse.healthcare_recommendations}
+            />
           )}
         </View>
       </View>
