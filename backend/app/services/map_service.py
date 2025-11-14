@@ -18,10 +18,12 @@ class MapsService:
         radius: int = 20000,  # Increased to 20km
         max_results: int = 5,
     ) -> List[Dict[str, Any]]:
-        if not self.api_key:
-            print("⚠️ Google Maps API key not configured")
-            return []
+        print(f"🔑 API Key being used: {self.api_key}")
+        print(f"🔑 API Key length: {len(self.api_key) if self.api_key else 'None'}")
 
+        if not self.api_key:
+            print("❌ GOOGLE_MAP_API environment variable is not set on Render!")
+            return []
         try:
             print(f"🔍 Searching for '{provider_type}' at {latitude},{longitude}")
 
