@@ -14,8 +14,8 @@ class MapsService:
         self,
         latitude: float,
         longitude: float,
-        provider_type: str = "dentist",
-        radius: int = 5000,
+        provider_type: str,
+        radius: int = 15000,
         max_results: int = 5,
     ) -> List[Dict[str, Any]]:
         """
@@ -32,7 +32,7 @@ class MapsService:
                 "key": self.api_key,
                 "location": f"{latitude},{longitude}",
                 "radius": radius,
-                "type": "health",
+                "type": "doctor",
                 "keyword": provider_type,
             }
 

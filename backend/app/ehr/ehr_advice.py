@@ -248,6 +248,8 @@ def enhanced_advice_with_ehr(
             print(
                 f"🔍 Searching for {needed_specialty} providers near {user_zipcode}..."
             )
+            print(f"🔍 Specialty from LLM: {needed_specialty}")
+
             providers = maps_service.get_providers_by_zipcode(
                 zipcode=user_zipcode, specialty=needed_specialty, max_results=3
             )
