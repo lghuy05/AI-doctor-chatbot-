@@ -276,7 +276,7 @@ class HealthcareProvider(BaseModel):
     rating: Optional[float] = None
     total_ratings: Optional[int] = None
     open_now: Optional[bool] = None
-    distance_km: float
+    distance_km: Optional[float] = None
     place_id: str
     types: List[str] = []
     google_maps_url: str

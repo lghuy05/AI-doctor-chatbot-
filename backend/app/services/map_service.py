@@ -133,7 +133,7 @@ class MapsService:
             # Enrich results
             enriched_places = []
             for place in relevant_places:
-                enriched_place = self._enrich_place_details(place)
+                enriched_place = self._enrich_place_details(place, latitude, longitude)
                 if enriched_place:
                     enriched_places.append(enriched_place)
 
@@ -146,9 +146,11 @@ class MapsService:
             traceback.print_exc()
             return []
 
-    def _enrich_place_details(self, place: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _enrich_place_details(
+        self, place: Dict[str, Any], user_lat: float = None, user_lng: float = None
+    ) -> Optional[Dict[str, Any]]:
         """
-        Enrich place with additional details - SIMPLIFIED VERSION
+        Enrich place with additional details - including distance calculation
         """
         try:
             # Get place details for additional info
@@ -156,12 +158,25 @@ class MapsService:
             params = {
                 "key": self.api_key.strip(),
                 "place_id": place["place_id"],
-                "fields": "formatted_phone_number,website,opening_hours,rating,user_ratings_total",
+                "fields": "formatted_phone_number,website,opening_hours,rating,user_ratings_total,geometry",
             }
 
             details_response = requests.get(details_url, params=params, timeout=10)
             details_data = details_response.json()
             place_details = details_data.get("result", {})
+
+            # Calculate distance if user coordinates are provided
+            distance_km = None
+            if user_lat is not None and user_lng is not None:
+                place_location = place_details.get("geometry", {}).get("location", {})
+                if (
+                    place_location
+                    and "lat" in place_location
+                    and "lng" in place_location
+                ):
+                    distance_km = self._calculate_distance(
+                        user_lat, user_lng, place_location["lat"], place_location["lng"]
+                    )
 
             return {
                 "name": place.get("name"),
@@ -174,17 +189,44 @@ class MapsService:
                 "place_id": place.get("place_id"),
                 "types": place.get("types", []),
                 "google_maps_url": f"https://www.google.com/maps/place/?q=place_id:{place['place_id']}",
+                "distance_km": distance_km,  # Add this field
             }
 
         except Exception as e:
             print(f"❌ Error enriching place details: {e}")
             # Return basic info if details fail
-            return {
+            result = {
                 "name": place.get("name"),
                 "address": place.get("vicinity"),
                 "place_id": place.get("place_id"),
                 "google_maps_url": f"https://www.google.com/maps/place/?q=place_id:{place['place_id']}",
+                "distance_km": None,  # Add this field even in error case
             }
+            return result
+
+    def _calculate_distance(
+        self, lat1: float, lon1: float, lat2: float, lon2: float
+    ) -> float:
+        """
+        Calculate distance between two coordinates in kilometers using Haversine formula
+        """
+        from math import radians, sin, cos, sqrt, atan2
+
+        R = 6371  # Earth's radius in kilometers
+
+        lat1_rad = radians(lat1)
+        lon1_rad = radians(lon1)
+        lat2_rad = radians(lat2)
+        lon2_rad = radians(lon2)
+
+        dlat = lat2_rad - lat1_rad
+        dlon = lon2_rad - lon1_rad
+
+        a = sin(dlat / 2) ** 2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2) ** 2
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        distance = R * c
+        return round(distance, 2)
 
     def geocode_zipcode(self, zipcode: str) -> Optional[tuple[float, float]]:
         """Convert zipcode to coordinates"""
