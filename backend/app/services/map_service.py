@@ -55,6 +55,12 @@ class MapsService:
             }
 
             print(f"🔍 Search params: type=doctor, keyword={search_keyword}")
+            print(f"🔍 EXACT REQUEST URL: {search_url}")
+            print(f"🔍 EXACT PARAMS: {params}")
+            print(
+                f"🔍 Full URL would be: {search_url}?{'&'.join([f'{k}={v}' for k, v in params.items()])}"
+            )
+
             response = requests.get(search_url, params=params, timeout=10)
             data = response.json()
 
