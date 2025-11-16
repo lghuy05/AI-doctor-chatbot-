@@ -10,13 +10,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as e:
-    print(f"❌ Error creating tables: {e}")
-
+# try:
+#     Base.metadata.create_all(bind=engine)
+# except Exception as e:
+#     print(f"❌ Error creating tables: {e}")
 app = FastAPI(title="AI Doctor Backend (OpenRouter)")
-
+#
 # EHR Configuration
 EHR_ENABLED = True
 FHIR_BASE_URL = os.getenv("FHIR_BASE_URL", "https://hapi.fhir.org/baseR4")

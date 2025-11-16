@@ -7,6 +7,7 @@ import {
   Linking,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { healthcareStyles } from '../app/styles/healthcareStyles';
 
@@ -39,17 +40,34 @@ const HealthcareProvidersCard: React.FC<HealthcareProvidersCardProps> = ({
 }) => {
   const { providers, recommendation_reason, provider_type } = recommendations;
 
-  const handleOpenMaps = async (googleMapsUrl: string) => {
+  const handleOpenMaps = async (provider: HealthcareProvider) => {
     try {
-      const supported = await Linking.canOpenURL(googleMapsUrl);
-      if (supported) {
-        await Linking.openURL(googleMapsUrl);
+      const searchQuery = encodeURIComponent(provider.name + ' ' + provider.address);
+
+      // For ALL platforms, use the universal Google Maps search URL
+      // This works on web, iOS, and Android
+      const universalUrl = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+
+      // For web, we can also try the direct place_id URL as a fallback
+      const webUrl = provider.google_maps_url;
+
+      if (Platform.OS === 'web') {
+        // On web, try the direct URL first, then fallback to search
+        try {
+          await Linking.openURL(webUrl);
+        } catch (webError) {
+          console.log('Web URL failed, trying search URL:', webError);
+          await Linking.openURL(universalUrl);
+        }
       } else {
-        Alert.alert('Error', 'Cannot open Google Maps on this device');
+        // On mobile (iOS/Android), ALWAYS use the search URL
+        // This prevents the "place_id:dasfsafsadac" issue
+        await Linking.openURL(universalUrl);
       }
+
     } catch (error) {
       console.error('Error opening maps:', error);
-      Alert.alert('Error', 'Failed to open Google Maps');
+      Alert.alert('Error', 'Failed to open maps application. Please search for the location manually.');
     }
   };
 
@@ -60,7 +78,10 @@ const HealthcareProvidersCard: React.FC<HealthcareProvidersCardProps> = ({
     }
 
     try {
-      const phoneUrl = `tel:${phoneNumber}`;
+      // Clean phone number - remove any non-digit characters except +
+      const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
+      const phoneUrl = `tel:${cleanPhone}`;
+
       const supported = await Linking.canOpenURL(phoneUrl);
       if (supported) {
         await Linking.openURL(phoneUrl);
@@ -80,9 +101,15 @@ const HealthcareProvidersCard: React.FC<HealthcareProvidersCardProps> = ({
     }
 
     try {
-      const supported = await Linking.canOpenURL(websiteUrl);
+      // Ensure the URL has a protocol
+      let formattedUrl = websiteUrl;
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://' + formattedUrl;
+      }
+
+      const supported = await Linking.canOpenURL(formattedUrl);
       if (supported) {
-        await Linking.openURL(websiteUrl);
+        await Linking.openURL(formattedUrl);
       } else {
         Alert.alert('Error', 'Cannot open website on this device');
       }
@@ -219,7 +246,7 @@ const HealthcareProvidersCard: React.FC<HealthcareProvidersCardProps> = ({
             <View style={healthcareStyles.actionButtons}>
               <TouchableOpacity
                 style={healthcareStyles.mapButton}
-                onPress={() => handleOpenMaps(provider.google_maps_url)}
+                onPress={() => handleOpenMaps(provider)}
               >
                 <Text style={healthcareStyles.icon}>🗺️</Text>
                 <Text style={healthcareStyles.buttonText}>Open Maps</Text>
