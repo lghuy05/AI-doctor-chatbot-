@@ -194,8 +194,8 @@ async def analyze_chat_session(
 
     # Call your existing analysis function (this does triage, EHR lookup, LLM analysis, etc.)
     try:
-        analysis_result = enhanced_advice_with_ehr(symptom_input, db, current_user)
-
+        analysis_result_dict = enhanced_advice_with_ehr(symptom_input, db, current_user)
+        analysis_result = EnhancedAdviceOutWithReminders(**analysis_result_dict)
         # Save the analysis result as a message
         analysis_summary = f"Analysis complete: {', '.join(analysis_result.possible_diagnosis) if analysis_result.possible_diagnosis else 'See recommendations'}"
         ChatService.add_message(
