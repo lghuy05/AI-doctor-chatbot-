@@ -297,7 +297,7 @@ class ChatMessageBase(BaseModel):
     role: str
     content: str
     message_type: str = "text"
-    metadata: Optional[Dict] = None
+    message_metadata: Optional[Dict] = None
 
 
 class ChatMessageCreate(ChatMessageBase):

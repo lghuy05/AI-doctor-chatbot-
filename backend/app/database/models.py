@@ -122,7 +122,7 @@ class ChatMessage(Base):
         String(20), default="text"
     )  # 'text', 'symptom', 'analysis_request'
     timestamp = Column(DateTime, default=datetime.now)  # Tampa time
-    metadata = Column(JSON)  # Store any additional data like symptom details
+    message_metadata = Column(JSON)  # Store any additional data like symptom details
 
     # Relationship
     session = relationship("ChatSession", back_populates="messages")

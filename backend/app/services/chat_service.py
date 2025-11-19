@@ -48,7 +48,7 @@ class ChatService:
         role: str,
         content: str,
         message_type: str = "text",
-        metadata: Optional[Dict] = None,
+        message_metadata: Optional[Dict] = None,
     ) -> ChatMessage:
         """Add a message to a chat session and update the session timestamp"""
         message = ChatMessage(
@@ -56,7 +56,7 @@ class ChatService:
             role=role,
             content=content,
             message_type=message_type,
-            metadata=metadata or {},
+            message_metadata=message_metadata or {},
         )
         db.add(message)
 
