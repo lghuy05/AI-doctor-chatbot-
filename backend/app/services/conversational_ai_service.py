@@ -43,12 +43,15 @@ class ConversationalAIService:
         )
         conversation_text += f"\nuser: {user_message}"
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": conversation_text},
-        ]
+        def build_messages():
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": conversation_text},
+            ]
 
-        return require_json_with_retry(messages)
+        return require_json_with_retry(
+            build_messages
+        )  # Pass the function, not the list
 
     @staticmethod
     def generate_conversational_response(
@@ -98,12 +101,15 @@ class ConversationalAIService:
 
         user_prompt = f"{current_context}Conversation history:\n{history_text}\n\nUser: {user_message}"
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+        def build_messages():
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
 
-        return require_json_with_retry(messages)
+        return require_json_with_retry(
+            build_messages
+        )  # Pass the function, not the list
 
     @staticmethod
     def extract_medical_context_from_conversation(
@@ -131,9 +137,12 @@ class ConversationalAIService:
             [f"{msg['role']}: {msg['content']}" for msg in conversation_history]
         )
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": conversation_text},
-        ]
+        def build_messages():
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": conversation_text},
+            ]
 
-        return require_json_with_retry(messages)
+        return require_json_with_retry(
+            build_messages
+        )  # Pass the function, not the list
