@@ -180,6 +180,10 @@ def enhanced_advice_with_ehr(
             f"IMPORTANT: Generate realistic symptom_analysis based on the actual patient description."
         )
 
+        print("🔍 PROMPT SENT TO LLM:")
+        print(f"System: {system[:200]}...")
+        print(f"User: {user[:500]}...")
+
         return [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -188,7 +192,41 @@ def enhanced_advice_with_ehr(
     print("🤖 Generating medical advice with EHR context...")
     response = require_json_with_retry(build_messages)
 
-    # 4. Store symptom intensity data in database - WITH FALLBACK LOGIC
+    print(f"🔍 LLM RESPONSE TYPE: {type(response)}")
+    print(f"🔍 LLM RESPONSE CONTENT: {response}")
+
+    if isinstance(response, str):
+        print(f"❌ LLM failed to return JSON, got string: {response}")
+        # Create a fallback response structure
+        response = {
+            "possible_diagnosis": ["Unable to analyze - AI service issue"],
+            "diagnosis_reasoning": "The AI analysis service returned an invalid response format.",
+            "advice": [
+                {
+                    "step": "Try again",
+                    "details": "Please retry the analysis in a few moments.",
+                }
+            ],
+            "when_to_seek_care": [
+                "If symptoms worsen or you experience emergency symptoms"
+            ],
+            "disclaimer": "AI service temporarily unavailable",
+            "symptom_analysis": {"intensities": [], "overall_severity": 0},
+            "ai_reminder_suggestions": [],
+        }
+    elif "error" in response:
+        print(f"❌ LLM returned error: {response}")
+        # Convert error response to proper format
+        response = {
+            "possible_diagnosis": ["Service temporarily unavailable"],
+            "diagnosis_reasoning": response.get("error", "AI service error"),
+            "advice": [{"step": "Retry", "details": "Please try again later"}],
+            "when_to_seek_care": ["Seek immediate care for emergency symptoms"],
+            "disclaimer": "Analysis service issue",
+            "symptom_analysis": {"intensities": [], "overall_severity": 0},
+            "ai_reminder_suggestions": [],
+        }
+
     symptom_intensities_to_store = []
 
     if "symptom_analysis" in response and response["symptom_analysis"]:
