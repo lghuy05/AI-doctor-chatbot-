@@ -185,20 +185,31 @@ async def analyze_chat_session(
     )
 
     # Call your existing analysis function (this does triage, EHR lookup, LLM analysis, etc.)
-    analysis_result = await enhanced_advice_with_ehr(symptom_input, db, current_user)
+    try:
+        analysis_result = enhanced_advice_with_ehr(symptom_input, db, current_user)
 
-    # Save the analysis result as a message
-    analysis_summary = f"Analysis complete: {', '.join(analysis_result.possible_diagnosis) if analysis_result.possible_diagnosis else 'See recommendations'}"
-    ChatService.add_message(
-        db,
-        session_id,
-        "assistant",
-        analysis_summary,
-        "medical_advice",
-        {"analysis_data": analysis_result.dict()},
-    )
+        # Save the analysis result as a message
+        analysis_summary = f"Analysis complete: {', '.join(analysis_result.possible_diagnosis) if analysis_result.possible_diagnosis else 'See recommendations'}"
+        ChatService.add_message(
+            db,
+            session_id,
+            "assistant",
+            analysis_summary,
+            "medical_advice",
+            {"analysis_data": analysis_result.dict()},
+        )
 
-    return analysis_result
+        return analysis_result
+    except Exception as e:
+        print(f"Analysis failed: {e}")
+        ChatService.add_message(
+            db,
+            session_id,
+            "assistant",
+            "I apologize, but I'm having trouble analyzing your symptoms right now. Please try again later.",
+            "error",
+        )
+        raise HTTPException(status_code=500, detail="Analysis failed")
 
 
 @router.get("/chat/sessions", response_model=List[ChatSessionResponse])

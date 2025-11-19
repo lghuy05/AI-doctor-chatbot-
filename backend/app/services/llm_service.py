@@ -92,10 +92,21 @@ def require_json_with_retry(build_messages_func, max_retries=3):
                 continue
 
         except Exception as e:
+            error_msg = str(e)
             print(f"❌ LLM call failed (attempt {attempt + 1}): {e}")
+
+            # Check if it's a rate limit error
+            if "Rate limit exceeded" in error_msg or "429" in error_msg:
+                print("🚨 OpenRouter rate limit exceeded - cannot retry")
+                return {
+                    "error": "I've reached my daily limit for medical analysis. Please try again tomorrow or contact support to increase the limit.",
+                    "rate_limit_exceeded": True,
+                }
+
             if attempt == max_retries - 1:
                 return {
-                    "response": "I'm having trouble responding right now. Please try again."
+                    "error": "I'm having trouble connecting to the medical analysis service. Please try again later.",
+                    "service_unavailable": True,
                 }
 
     return {"response": "I apologize for the technical difficulty. How can I help you?"}
