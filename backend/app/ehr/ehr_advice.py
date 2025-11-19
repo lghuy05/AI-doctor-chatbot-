@@ -28,11 +28,20 @@ def enhanced_advice_with_ehr(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    print("📥 EHR_ADVICE RECEIVED INPUT:")
+    print(f"  Symptoms: {inp.symptoms}")
+    print(f"  Age: {inp.age}")
+    print(f"  Sex: {inp.sex}")
+    print(f"  Duration: {inp.duration}")
+    print(f"  Meds: {inp.meds}")
+    print(f"  Conditions: {inp.conditions}")
+
     mapping = (
         db.query(UserFHIRMapping)
         .filter(UserFHIRMapping.user_id == current_user.id)
         .first()
     )
+
     if not mapping:
         mapping = UserFHIRMapping(user_id=current_user.id, fhir_patient_id="example")
         db.add(mapping)

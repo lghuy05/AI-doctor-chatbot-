@@ -174,6 +174,14 @@ async def analyze_chat_session(
         conditions=medical_context.get("conditions", []),
         duration=medical_context.get("duration"),
     )
+    # DEBUG: Print exactly what we're sending to EHR analysis
+    print("🎯 SENDING TO EHR ANALYSIS:")
+    print(f"  Age: {symptom_input.age}")
+    print(f"  Sex: {symptom_input.sex}")
+    print(f"  Symptoms: {symptom_input.symptoms}")
+    print(f"  Medications: {symptom_input.meds}")
+    print(f"  Conditions: {symptom_input.conditions}")
+    print(f"  Duration: {symptom_input.duration}")
 
     # Add a message indicating we're switching to analysis mode
     ChatService.add_message(
