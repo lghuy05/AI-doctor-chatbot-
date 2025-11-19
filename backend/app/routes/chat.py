@@ -1,6 +1,7 @@
 # app/routes/chat.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import json  # ADD THIS IMPORT
 from app.database.database import get_db
 from app.schemas.schemas import (
     ChatInput,
@@ -79,16 +80,41 @@ async def chat_endpoint(
                 chat_input.message, conversation_history, session.context_data or {}
             )
         )
-        response_content = conversational_response["response"]
-        should_offer_analysis = conversational_response.get(
-            "should_offer_analysis", False
-        )
 
-        # Update session context if new medical info was extracted
-        if conversational_response.get("update_context"):
-            ChatService.update_session_context(
-                db, session.id, conversational_response["update_context"]
+        # FIX: Handle both string and dictionary responses
+        print(
+            f"🔍 DEBUG: conversational_response type: {type(conversational_response)}"
+        )
+        print(f"🔍 DEBUG: conversational_response content: {conversational_response}")
+
+        if isinstance(conversational_response, str):
+            try:
+                # Try to parse as JSON
+                conversational_response = json.loads(conversational_response)
+                response_content = conversational_response.get(
+                    "response",
+                    "I'm here to help with your health concerns. Could you tell me more about what you're experiencing?",
+                )
+            except json.JSONDecodeError:
+                # If it's not JSON, use the string directly
+                response_content = conversational_response
+        elif isinstance(conversational_response, dict):
+            response_content = conversational_response.get(
+                "response",
+                "I'm here to help with your health concerns. Could you tell me more about what you're experiencing?",
             )
+            should_offer_analysis = conversational_response.get(
+                "should_offer_analysis", False
+            )
+
+            # Update session context if new medical info was extracted
+            if conversational_response.get("update_context"):
+                ChatService.update_session_context(
+                    db, session.id, conversational_response["update_context"]
+                )
+        else:
+            # Fallback response
+            response_content = "Hello! I'm here to help with your health concerns. How are you feeling today?"
 
     # Save assistant response
     assistant_message = ChatService.add_message(
