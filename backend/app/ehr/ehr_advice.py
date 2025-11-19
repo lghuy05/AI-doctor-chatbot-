@@ -60,10 +60,10 @@ def enhanced_advice_with_ehr(
     # 3. Get EHR data for LLM context
     ehr_context = {
         "ehr_medications": [
-            med["name"] for med in ehr_data.get("active_medications", [])
+            med["name"] for med in ehr_data.get("active_medications", [])[:5]
         ],
         "ehr_conditions": [
-            cond["name"] for cond in ehr_data.get("medical_conditions", [])
+            cond["name"] for cond in ehr_data.get("medical_conditions", [])[:3]
         ],
         "ehr_age": ehr_data.get("age"),
         "ehr_gender": ehr_data.get("gender"),
