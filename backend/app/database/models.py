@@ -28,6 +28,10 @@ class User(Base):
     sex = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     role = Column(String, default="patient")
+    chat_sessions = relationship("ChatSession", back_populates="user")
+    fhir_mapping = relationship("UserFHIRMapping", back_populates="user", uselist=False)
+    symptom_intensities = relationship("SymptomIntensity", back_populates="user")
+    symptom_frequencies = relationship("SymptomFrequency", back_populates="user")
 
 
 class UserFHIRMapping(Base):
@@ -38,7 +42,7 @@ class UserFHIRMapping(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationship to User
-    user = relationship("User")
+    user = relationship("User", back_populates="fhir_mapping")
 
 
 class SymptomIntensity(Base):
@@ -52,7 +56,7 @@ class SymptomIntensity(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # CHANGED
 
     # Relationship to User
-    user = relationship("User")
+    user = relationship("User", back_populates="symptom_intensities")
 
 
 class SymptomFrequency(Base):
@@ -67,7 +71,7 @@ class SymptomFrequency(Base):
     )  # CHANGED
 
     # Relationship to User
-    user = relationship("User")
+    user = relationship("User", back_populates="symptom_frequencies")
 
 
 class Reminder(Base):
