@@ -133,7 +133,7 @@ class SymptomIntensity(BaseModel):
 
 class SymptomAnalysis(BaseModel):
     intensities: List[SymptomIntensity]
-    overall_severity: Optional[int] = Field(ge=1, le=10, default=None)
+    overall_severity: Optional[int] = Field(ge=0, le=10, default=None)
 
 
 class EnhancedAdviceOut(BaseModel):

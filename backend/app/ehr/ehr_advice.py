@@ -211,7 +211,7 @@ def enhanced_advice_with_ehr(
                 "If symptoms worsen or you experience emergency symptoms"
             ],
             "disclaimer": "AI service temporarily unavailable",
-            "symptom_analysis": {"intensities": [], "overall_severity": 0},
+            "symptom_analysis": {"intensities": [], "overall_severity": None},
             "ai_reminder_suggestions": [],
         }
     elif "error" in response:
@@ -223,7 +223,7 @@ def enhanced_advice_with_ehr(
             "advice": [{"step": "Retry", "details": "Please try again later"}],
             "when_to_seek_care": ["Seek immediate care for emergency symptoms"],
             "disclaimer": "Analysis service issue",
-            "symptom_analysis": {"intensities": [], "overall_severity": 0},
+            "symptom_analysis": {"intensities": [], "overall_severity": None},
             "ai_reminder_suggestions": [],
         }
 
