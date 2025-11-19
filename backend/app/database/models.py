@@ -9,6 +9,7 @@ from sqlalchemy import (
     Boolean,
     Time,
     Date,
+    JSON,
 )
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -91,3 +92,37 @@ class Reminder(Base):
         DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
     )
     completed_at = Column(DateTime(timezone=True))
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.now)  # Tampa time
+    updated_at = Column(DateTime, default=datetime.now)  # Tampa time
+    is_active = Column(Boolean, default=True)
+    context_data = Column(JSON)  # Store symptoms, meds, etc. as conversation progresses
+
+    # Relationship
+    user = relationship("User", back_populates="chat_sessions")
+    messages = relationship(
+        "ChatMessage", back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("chat_sessions.id"))
+    role = Column(String(20))  # 'user' or 'assistant'
+    content = Column(Text)
+    message_type = Column(
+        String(20), default="text"
+    )  # 'text', 'symptom', 'analysis_request'
+    timestamp = Column(DateTime, default=datetime.now)  # Tampa time
+    metadata = Column(JSON)  # Store any additional data like symptom details
+
+    # Relationship
+    session = relationship("ChatSession", back_populates="messages")

@@ -1,0 +1,197 @@
+# app/routes/chat.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database.database import get_db
+from app.schemas.schemas import ChatInput, ChatResponse, ChatSessionResponse
+from app.services.chat_service import ChatService
+from app.services.conversational_ai_service import ConversationalAIService
+from app.services.auth_service import get_current_user
+from app.database.models import User
+from typing import List
+
+router = APIRouter()
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(
+    chat_input: ChatInput,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Main chat endpoint - handles both normal conversation and medical analysis offers
+    """
+    # Get or create session
+    if chat_input.session_id:
+        session = ChatService.get_session(db, chat_input.session_id, current_user.id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+    else:
+        # Create new session
+        session = ChatService.create_session(db, current_user.id)
+
+    # Get conversation history
+    history_messages = ChatService.get_session_messages(db, session.id)
+    conversation_history = [
+        {"role": msg.role, "content": msg.content} for msg in history_messages
+    ]
+
+    # Save user message
+    user_message = ChatService.add_message(db, session.id, "user", chat_input.message)
+
+    # ANALYZE: Should we switch to analysis mode?
+    analysis_check = ConversationalAIService.analyze_conversation_for_medical_context(
+        chat_input.message, conversation_history
+    )
+
+    print(f"🔍 Analysis Check: {analysis_check}")
+
+    # STRATEGY: Only offer analysis if we have good info AND user seems to want it
+    should_offer_analysis = (
+        analysis_check.get("should_offer_analysis", False)
+        and analysis_check.get("has_sufficient_info", False)
+        and analysis_check.get("confidence_score", 0) > 0.7  # Be conservative
+    )
+
+    if should_offer_analysis:
+        # OFFER ANALYSIS MODE
+        response_content = (
+            "Based on what you've told me, I can analyze your symptoms and provide medical guidance. "
+            "This includes possible causes, self-care advice, and when to see a doctor. "
+            "Would you like me to do that analysis for you?"
+        )
+
+        # Also update context with extracted symptoms for later use
+        if analysis_check.get("extracted_symptoms"):
+            ChatService.update_session_context(
+                db, session.id, {"symptoms": analysis_check["extracted_symptoms"]}
+            )
+
+    else:
+        # NORMAL CONVERSATION MODE
+        conversational_response = (
+            ConversationalAIService.generate_conversational_response(
+                chat_input.message, conversation_history, session.context_data or {}
+            )
+        )
+        response_content = conversational_response["response"]
+        should_offer_analysis = conversational_response.get(
+            "should_offer_analysis", False
+        )
+
+        # Update session context if new medical info was extracted
+        if conversational_response.get("update_context"):
+            ChatService.update_session_context(
+                db, session.id, conversational_response["update_context"]
+            )
+
+    # Save assistant response
+    assistant_message = ChatService.add_message(
+        db, session.id, "assistant", response_content
+    )
+
+    return ChatResponse(
+        session_id=session.id,
+        message=assistant_message,
+        requires_analysis=should_offer_analysis,
+        analysis_prompt="Would you like me to analyze your symptoms and provide medical guidance?"
+        if should_offer_analysis
+        else None,
+    )
+
+
+@router.post(
+    "/chat/{session_id}/analyze", response_model=EnhancedAdviceOutWithReminders
+)
+async def analyze_chat_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Switch to medical analysis mode using all the conversation context
+    This triggers your existing ehr_advice system with extracted data
+    """
+    # Verify session belongs to user
+    session = ChatService.get_session(db, session_id, current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Get all messages from this session
+    messages = ChatService.get_session_messages(db, session_id, limit=100)
+    conversation_history = [
+        {"role": msg.role, "content": msg.content} for msg in messages
+    ]
+
+    # Extract medical context from the entire conversation
+    medical_context = ConversationalAIService.extract_medical_context_from_conversation(
+        conversation_history
+    )
+
+    print(f"🩺 Extracted Medical Context: {medical_context}")
+
+    # Use your existing ehr_advice logic but with conversation-extracted context
+    from app.routes.ehr_advice import enhanced_advice_with_ehr
+    from app.schemas.schemas import SymptomInput
+
+    # Create SymptomInput from extracted context
+    symptom_input = SymptomInput(
+        age=medical_context.get("age", 30),  # default age if not mentioned
+        sex=medical_context.get("sex"),
+        symptoms=medical_context.get("symptoms", ""),
+        meds=medical_context.get("medications", []),
+        conditions=medical_context.get("conditions", []),
+        duration=medical_context.get("duration"),
+    )
+
+    # Add a message indicating we're switching to analysis mode
+    ChatService.add_message(
+        db,
+        session_id,
+        "assistant",
+        "I'm now analyzing your symptoms with your medical history. Please wait a moment...",
+        "analysis_request",
+    )
+
+    # Call your existing analysis function (this does triage, EHR lookup, LLM analysis, etc.)
+    analysis_result = await enhanced_advice_with_ehr(symptom_input, db, current_user)
+
+    # Save the analysis result as a message
+    analysis_summary = f"Analysis complete: {', '.join(analysis_result.possible_diagnosis) if analysis_result.possible_diagnosis else 'See recommendations'}"
+    ChatService.add_message(
+        db,
+        session_id,
+        "assistant",
+        analysis_summary,
+        "medical_advice",
+        {"analysis_data": analysis_result.dict()},
+    )
+
+    return analysis_result
+
+
+@router.get("/chat/sessions", response_model=List[ChatSessionResponse])
+async def get_chat_sessions(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """Get all chat sessions for the current user"""
+    sessions = ChatService.get_user_sessions(db, current_user.id)
+    return sessions
+
+
+@router.get("/chat/sessions/{session_id}", response_model=ChatSessionResponse)
+async def get_chat_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a specific chat session with all its messages"""
+    session = ChatService.get_session(db, session_id, current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Get messages for this session
+    messages = ChatService.get_session_messages(db, session_id)
+    session.messages = messages
+
+    return session

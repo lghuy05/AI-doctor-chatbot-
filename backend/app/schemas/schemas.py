@@ -291,3 +291,55 @@ class HealthcareRecommendations(BaseModel):
 class EnhancedAdviceOutWithReminders(EnhancedAdviceOut):
     ai_reminder_suggestions: List[AIReminderSuggestion] = []
     healthcare_recommendations: Optional[HealthcareRecommendations] = None
+
+
+class ChatMessageBase(BaseModel):
+    role: str
+    content: str
+    message_type: str = "text"
+    metadata: Optional[Dict] = None
+
+
+class ChatMessageCreate(ChatMessageBase):
+    session_id: int
+
+
+class ChatMessageResponse(ChatMessageBase):
+    id: int
+    session_id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChatSessionBase(BaseModel):
+    user_id: int
+    context_data: Optional[Dict] = None
+
+
+class ChatSessionCreate(ChatSessionBase):
+    pass
+
+
+class ChatSessionResponse(ChatSessionBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    is_active: bool
+    messages: List[ChatMessageResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ChatInput(BaseModel):
+    message: str
+    session_id: Optional[int] = None  # None for new sessions
+
+
+class ChatResponse(BaseModel):
+    session_id: int
+    message: ChatMessageResponse
+    requires_analysis: bool = False
+    analysis_prompt: Optional[str] = None
