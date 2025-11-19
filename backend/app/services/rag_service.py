@@ -4,14 +4,11 @@ from app.openrouter_client import extract_medical_keywords
 from app.services.pinecone_service import pinecone_service
 
 
-def get_medical_context(symptoms: str, min_results: int = 5):
+def get_medical_context(symptoms: str, min_results: int = 2):
     print(f"🔧 Pinecone index available: {pinecone_service.index is not None}")
 
     # First try Pinecone
-    results = query_medical_knowledge(symptoms, n_results=min_results + 2)
-    print(f"🔧 Raw Pinecone results: {results}")
-    # First try Pinecone
-    results = query_medical_knowledge(symptoms, n_results=min_results + 2)
+    results = query_medical_knowledge(symptoms, n_results=min_results + 1)
     documents = results.get("documents", [[]])[0]
     metadatas = results.get("metadatas", [[]])[0]
     distances = results.get("distances", [[]])[0]
