@@ -2,7 +2,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.database import get_db
-from app.schemas.schemas import ChatInput, ChatResponse, ChatSessionResponse
+from app.schemas.schemas import (
+    ChatInput,
+    ChatResponse,
+    ChatSessionResponse,
+    EnhancedAdviceOutWithReminders,
+)
 from app.services.chat_service import ChatService
 from app.services.conversational_ai_service import ConversationalAIService
 from app.services.auth_service import get_current_user
