@@ -6,9 +6,10 @@ import asyncio
 from functools import wraps
 import signal
 
+
 def timeout(seconds=30):
     def decorator(func):
-        @wraps(func
+        @wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 # For synchronous functions, we can't easily add timeouts
@@ -17,8 +18,12 @@ def timeout(seconds=30):
             except Exception as e:
                 print(f"Timeout error in {func.__name__}: {e}")
                 return {"error": f"Service timeout: {str(e)}", "articles": []}
+
         return wrapper
+
     return decorator
+
+
 @timeout(30)
 def get_medical_context(symptoms: str, min_results: int = 2):
     print(f"🔧 Pinecone index available: {pinecone_service.index is not None}")
