@@ -1,4 +1,4 @@
-// app/(drawer)/index.tsx - UPDATED WITH DIAGNOSIS DISPLAY
+// app/(drawer)/index.tsx - FIXED VERSION
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -9,16 +9,14 @@ import { router, useNavigation } from 'expo-router';
 import { chatStyles } from '../styles/chatStyles';
 import api from '../../api/client';
 import { usePatientStore } from '../../hooks/usePatientStore';
-import { useChatStore, ChatMessage } from '../../hooks/useChatStore';
+import {
+  useChatStore,
+  ChatMessage,
+  AIResponse,
+  AIReminderSuggestion,
+  HealthcareRecommendations
+} from '../../hooks/useChatStore';
 import HealthcareProvidersCard from '../../components/HealthcareProvidersCard';
-
-interface AIReminderSuggestion {
-  reminder_title: string;
-  reminder_description: string;
-  suggested_time: string;
-  suggested_frequency: string;
-  priority: string;
-}
 
 interface CustomReminderData {
   title: string;
@@ -29,62 +27,39 @@ interface CustomReminderData {
   recurrence_pattern: string;
 }
 
-interface HealthcareProvider {
-  name: string;
-  address: string;
-  phone: string | null;
-  website: string | null;
-  rating: number | null;
-  total_ratings: number | null;
-  open_now: boolean | null;
-  distance_km: number;
-  place_id: string;
-  types: string[];
-  google_maps_url: string;
-}
-
-interface HealthcareRecommendations {
-  providers: HealthcareProvider[];
-  recommendation_reason: string;
-  provider_type: string;
-}
-
-interface AIResponse {
-  emergency?: boolean;
-  notice?: string;
-  error?: string;
-  possible_diagnosis?: string[];
-  diagnosis_reasoning?: string;
-  advice?: Array<{ step: string; details: string }>;
-  when_to_seek_care?: string[];
-  disclaimer?: string;
-  symptom_analysis?: {
-    intensities: Array<{
-      symptom_name: string;
-      intensity: number;
-      duration_minutes: number;
-      notes: string;
-    }>;
-    overall_severity: number;
+interface ChatResponse {
+  session_id: number;
+  message: {
+    role: string;
+    content: string;
+    message_type: string;
+    message_metadata: any;
+    id: number;
+    session_id: number;
+    timestamp: string;
   };
-  ai_reminder_suggestions?: AIReminderSuggestion[];
-  healthcare_recommendations?: HealthcareRecommendations;
+  requires_analysis: boolean;
+  analysis_prompt: string | null;
 }
 
 export default function ChatIntroScreen() {
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showReminderPopup, setShowReminderPopup] = useState(false);
   const [aiReminderSuggestions, setAiReminderSuggestions] = useState<AIReminderSuggestion[]>([]);
   const [customReminders, setCustomReminders] = useState<{ [key: number]: CustomReminderData }>({});
   const [tempTime, setTempTime] = useState<{ [key: number]: string }>({});
+  const [showAnalysisOffer, setShowAnalysisOffer] = useState(false);
+  const [analysisPrompt, setAnalysisPrompt] = useState('');
 
-  // Use chat store for persistence
+  // Use chat store for all state management
   const {
     currentSession,
     addMessage,
     clearCurrentSession,
-    isLoading: chatLoading
+    isLoading: chatLoading,
+    currentSessionId,
+    setCurrentSessionId,
+    setLoading
   } = useChatStore();
 
   // Get patient profile from store
@@ -92,8 +67,7 @@ export default function ChatIntroScreen() {
     patientProfile,
     getPatientContext,
     fetchPatientProfile,
-    isLoading: patientLoading,
-    error: patientError
+    isLoading: patientLoading
   } = usePatientStore();
 
   const navigation = useNavigation();
@@ -111,31 +85,6 @@ export default function ChatIntroScreen() {
     loadPatientData();
   }, []);
 
-  const getPatientPayload = () => {
-    const patientContext = getPatientContext();
-
-    let age = patientProfile?.age || 30;
-    if (!patientProfile?.age && patientProfile?.birth_date) {
-      const birthDate = new Date(patientProfile.birth_date);
-      const today = new Date();
-      age = today.getFullYear() - birthDate.getFullYear();
-    }
-
-    let gender = patientProfile?.gender?.toLowerCase() || 'female';
-    if (gender.includes('male')) gender = 'male';
-    else if (gender.includes('female')) gender = 'female';
-
-    return {
-      age: age,
-      sex: gender,
-      symptoms: message.trim(),
-      meds: patientContext.medications,
-      conditions: patientContext.conditions,
-      duration: "unknown",
-      patient_id: "example"
-    };
-  };
-
   const send = async () => {
     const text = message.trim();
     if (!text) {
@@ -143,67 +92,45 @@ export default function ChatIntroScreen() {
       return;
     }
 
-    if (loading) return;
+    if (chatLoading) return;
 
+    // Use store loading state
     setLoading(true);
-    const patientContext = getPatientContext();
 
     try {
-      const payload = getPatientPayload();
-      console.log('Sending payload with patient data:', payload);
+      // Get patient context BEFORE making the API call
+      const patientContext = getPatientContext();
 
-      // Step 1: Triage assessment
-      const triageResponse = await api.post('/triage', payload);
-      const triage = triageResponse.data;
+      const response = await api.post('/chat', {
+        message: text,
+        session_id: currentSessionId
+      });
 
-      if (triage.risk === 'emergency') {
-        const emergencyResponse: AIResponse = {
-          emergency: true,
-          notice: 'Based on your symptoms and medical history, this appears to be a potential emergency. Please call 911 or go to the nearest emergency room immediately.'
-        };
+      const chatResponse: ChatResponse = response.data;
 
-        addMessage(text, emergencyResponse, text, patientContext);
-        setLoading(false);
-        setMessage('');
-        return;
+      // Update current session ID if this is a new session
+      if (!currentSessionId) {
+        setCurrentSessionId(chatResponse.session_id);
       }
 
-      // Step 2: Get personalized advice with diagnosis
-      const adviceResponse = await api.post('/ehr-advice', payload);
-
-      // Save to persistent store
-      addMessage(text, adviceResponse.data, text, patientContext);
-
-      // Check for AI reminder suggestions
-      if (adviceResponse.data.ai_reminder_suggestions &&
-        adviceResponse.data.ai_reminder_suggestions.length > 0) {
-
-        // Initialize custom reminders with AI suggestions
-        const initialCustomReminders: { [key: number]: CustomReminderData } = {};
-        const initialTempTime: { [key: number]: string } = {};
-
-        adviceResponse.data.ai_reminder_suggestions.forEach((suggestion: AIReminderSuggestion, index: number) => {
-          initialCustomReminders[index] = {
-            title: suggestion.reminder_title,
-            description: suggestion.reminder_description,
-            scheduled_time: suggestion.suggested_time,
-            days_of_week: suggestion.suggested_frequency === 'daily' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : [],
-            is_recurring: suggestion.suggested_frequency !== 'once',
-            recurrence_pattern: suggestion.suggested_frequency === 'daily' ? 'daily' : 'weekly'
-          };
-          initialTempTime[index] = suggestion.suggested_time;
-        });
-
-        setAiReminderSuggestions(adviceResponse.data.ai_reminder_suggestions);
-        setCustomReminders(initialCustomReminders);
-        setTempTime(initialTempTime);
-        setShowReminderPopup(true);
+      // Handle analysis offer
+      if (chatResponse.requires_analysis) {
+        setShowAnalysisOffer(true);
+        setAnalysisPrompt(chatResponse.analysis_prompt || 'Would you like me to analyze your symptoms?');
       }
+
+      // Create AI response object based on message type
+      let aiResponse: AIResponse = {
+        response: chatResponse.message.content
+      };
+
+      // Add message to store
+      addMessage(text, aiResponse, text, patientContext);
 
       setMessage('');
 
     } catch (error: any) {
-      console.error('API Error:', error);
+      console.error('Chat API Error:', error);
 
       let errorMessage = 'Something went wrong. Please try again.';
       if (error.response?.status === 401) {
@@ -216,6 +143,7 @@ export default function ChatIntroScreen() {
         errorMessage = 'Server is temporarily unavailable. Please try again later.';
       }
 
+      const patientContext = getPatientContext();
       const errorResponse: AIResponse = { error: errorMessage };
       addMessage(text, errorResponse, text, patientContext);
 
@@ -225,7 +153,61 @@ export default function ChatIntroScreen() {
     }
   };
 
-  // ... (keep all the reminder-related functions the same as before)
+  const handleAcceptAnalysis = async () => {
+    if (!currentSessionId) {
+      Alert.alert('Error', 'No active chat session');
+      return;
+    }
+
+    setShowAnalysisOffer(false);
+    setLoading(true);
+
+    try {
+      const response = await api.post(`/chat/${currentSessionId}/analyze`);
+      const analysisResult: AIResponse = response.data;
+
+      const patientContext = getPatientContext();
+
+      // Add analysis result as a new message
+      addMessage(
+        'Analyze my symptoms',
+        analysisResult,
+        'Analyze my symptoms',
+        patientContext
+      );
+
+      // Check for AI reminder suggestions
+      if (analysisResult.ai_reminder_suggestions && analysisResult.ai_reminder_suggestions.length > 0) {
+        const initialCustomReminders: { [key: number]: CustomReminderData } = {};
+        const initialTempTime: { [key: number]: string } = {};
+
+        analysisResult.ai_reminder_suggestions.forEach((suggestion: AIReminderSuggestion, index: number) => {
+          initialCustomReminders[index] = {
+            title: suggestion.reminder_title,
+            description: suggestion.reminder_description,
+            scheduled_time: suggestion.suggested_time,
+            days_of_week: suggestion.suggested_frequency === 'daily' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : [],
+            is_recurring: suggestion.suggested_frequency !== 'once',
+            recurrence_pattern: suggestion.suggested_frequency === 'daily' ? 'daily' : 'weekly'
+          };
+          initialTempTime[index] = suggestion.suggested_time;
+        });
+
+        setAiReminderSuggestions(analysisResult.ai_reminder_suggestions);
+        setCustomReminders(initialCustomReminders);
+        setTempTime(initialTempTime);
+        setShowReminderPopup(true);
+      }
+
+    } catch (error: any) {
+      console.error('Analysis API Error:', error);
+      Alert.alert('Error', 'Failed to analyze symptoms. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reminder functions (keep the same as before)
   const handleManualTimeChange = (text: string, index: number) => {
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 
@@ -416,7 +398,7 @@ export default function ChatIntroScreen() {
     }
   };
 
-  // NEW: Enhanced chat message renderer with diagnosis display
+  // Enhanced chat message renderer
   const renderChatMessage = (chat: ChatMessage) => (
     <View key={chat.id} style={chatStyles.messageContainer}>
       {/* User Message */}
@@ -430,6 +412,21 @@ export default function ChatIntroScreen() {
       <View style={chatStyles.aiMessageContainer}>
         <View style={chatStyles.aiBubble}>
 
+          {/* Simple Response */}
+          {chat.aiResponse.response && (
+            <View style={[chatStyles.card, chatStyles.responseCard]}>
+              <Text style={chatStyles.responseText}>{chat.aiResponse.response}</Text>
+            </View>
+          )}
+
+          {/* Loading State */}
+          {chat.aiResponse.loading && (
+            <View style={[chatStyles.card, chatStyles.loadingCard]}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text style={chatStyles.loadingText}>Analyzing your symptoms...</Text>
+            </View>
+          )}
+
           {/* Emergency Alert */}
           {chat.aiResponse.emergency && (
             <View style={[chatStyles.card, chatStyles.emergencyCard]}>
@@ -438,7 +435,7 @@ export default function ChatIntroScreen() {
             </View>
           )}
 
-          {/* Diagnosis Section - NEW */}
+          {/* Diagnosis Section */}
           {chat.aiResponse.possible_diagnosis && chat.aiResponse.possible_diagnosis.length > 0 && (
             <View style={[chatStyles.card, chatStyles.diagnosisCard]}>
               <Text style={chatStyles.diagnosisTitle}>🩺 Possible Conditions</Text>
@@ -460,7 +457,7 @@ export default function ChatIntroScreen() {
             </View>
           )}
 
-          {/* Symptom Analysis - NEW */}
+          {/* Symptom Analysis */}
           {chat.aiResponse.symptom_analysis && (
             <View style={[chatStyles.card, chatStyles.symptomCard]}>
               <Text style={chatStyles.symptomTitle}>📊 Symptom Analysis</Text>
@@ -548,7 +545,7 @@ export default function ChatIntroScreen() {
             </View>
           )}
 
-          {/* Healthcare Recommendations - NEW */}
+          {/* Healthcare Recommendations */}
           {chat.aiResponse.healthcare_recommendations && (
             <HealthcareProvidersCard
               recommendations={chat.aiResponse.healthcare_recommendations}
@@ -578,7 +575,7 @@ export default function ChatIntroScreen() {
 
           <TouchableOpacity
             style={chatStyles.clearButton}
-            onPress={clearCurrentSession}
+            onPress={clearCurrentSession} // Store handles both session and ID
           >
             <Text style={chatStyles.clearButtonText}>Clear</Text>
           </TouchableOpacity>
@@ -602,7 +599,7 @@ export default function ChatIntroScreen() {
 
           {currentSession.map(renderChatMessage)}
 
-          {loading && (
+          {chatLoading && (
             <View style={[chatStyles.card, chatStyles.loadingCard]}>
               <ActivityIndicator size="large" color="#3B82F6" />
               <Text style={chatStyles.loadingText}>Analyzing your symptoms...</Text>
@@ -625,7 +622,7 @@ export default function ChatIntroScreen() {
             value={message}
             onChangeText={setMessage}
             placeholderTextColor={patientProfile ? "#9AA5B1" : "#F59E0B"}
-            editable={!loading}
+            editable={!chatLoading}
             returnKeyType="send"
             onSubmitEditing={send}
             multiline
@@ -634,19 +631,48 @@ export default function ChatIntroScreen() {
           <TouchableOpacity
             style={[
               chatStyles.sendBtn,
-              loading && chatStyles.sendBtnDisabled,
+              chatLoading && chatStyles.sendBtnDisabled,
               !patientProfile && chatStyles.sendBtnWarning
             ]}
             onPress={send}
-            disabled={loading || !message.trim()}
+            disabled={chatLoading || !message.trim()}
           >
             <Text style={chatStyles.sendBtnText}>
-              {loading ? '...' : 'Send'}
+              {chatLoading ? '...' : 'Send'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* AI Reminder Suggestions Popup - UNCHANGED */}
+        {/* Analysis Offer Modal */}
+        <Modal
+          visible={showAnalysisOffer}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowAnalysisOffer(false)}
+        >
+          <View style={chatStyles.analysisOfferContainer}>
+            <View style={chatStyles.analysisOfferCard}>
+              <Text style={chatStyles.analysisOfferTitle}>🩺 Medical Analysis Available</Text>
+              <Text style={chatStyles.analysisOfferText}>{analysisPrompt}</Text>
+              <View style={chatStyles.analysisOfferButtons}>
+                <TouchableOpacity
+                  style={chatStyles.analysisOfferButtonSecondary}
+                  onPress={() => setShowAnalysisOffer(false)}
+                >
+                  <Text style={chatStyles.analysisOfferButtonTextSecondary}>Not Now</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={chatStyles.analysisOfferButton}
+                  onPress={handleAcceptAnalysis}
+                >
+                  <Text style={chatStyles.analysisOfferButtonText}>Yes, Analyze</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* AI Reminder Suggestions Popup */}
         <Modal
           visible={showReminderPopup}
           animationType="slide"

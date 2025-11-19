@@ -113,6 +113,19 @@ export const chatStyles = StyleSheet.create({
     borderColor: '#F1F5F9',
   },
 
+  // Response card for simple messages
+  responseCard: {
+    backgroundColor: '#FFFFFF',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+  },
+  responseText: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+
   // Specialized card variants
   welcomeCard: {
     alignItems: 'center',
@@ -441,7 +454,80 @@ export const chatStyles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  // REMINDER POPUP STYLES (keep these as they are)
+  // Analysis Offer Modal Styles
+  analysisOfferContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  analysisOfferCard: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    margin: 20,
+    width: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  analysisOfferTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+    color: '#0F131A',
+  },
+  analysisOfferText: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  analysisOfferButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  analysisOfferButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  analysisOfferButtonSecondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  analysisOfferButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  analysisOfferButtonTextSecondary: {
+    color: '#3B82F6',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  // Reminder Popup Styles
   reminderPopup: {
     position: 'absolute',
     top: 0,

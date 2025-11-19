@@ -162,7 +162,7 @@ async def analyze_chat_session(
     print(f"🩺 Extracted Medical Context: {medical_context}")
 
     # Use your existing ehr_advice logic but with conversation-extracted context
-    from app.routes.ehr_advice import enhanced_advice_with_ehr
+    from app.ehr.ehr_advice import enhanced_advice_with_ehr
     from app.schemas.schemas import SymptomInput
 
     # Create SymptomInput from extracted context
