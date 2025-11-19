@@ -245,3 +245,13 @@ async def get_chat_session(
     session.messages = messages
 
     return session
+
+
+@router.get("/chat/debug-test")
+async def debug_test(current_user: User = Depends(get_current_user)):
+    """Debug endpoint to test authentication"""
+    return {
+        "message": "Debug endpoint working",
+        "user_id": current_user.id,
+        "username": current_user.username,
+    }

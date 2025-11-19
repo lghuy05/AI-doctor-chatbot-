@@ -2,8 +2,24 @@ from app.services.vector_store import query_medical_knowledge
 from app.services.pubmed_service import get_article_from_pubmed
 from app.openrouter_client import extract_medical_keywords
 from app.services.pinecone_service import pinecone_service
+import asyncio
+from functools import wraps
+import signal
 
-
+def timeout(seconds=30):
+    def decorator(func):
+        @wraps(func
+        def wrapper(*args, **kwargs):
+            try:
+                # For synchronous functions, we can't easily add timeouts
+                # but we can add timeout to specific external calls
+                return func(*args, **kwargs)
+            except Exception as e:
+                print(f"Timeout error in {func.__name__}: {e}")
+                return {"error": f"Service timeout: {str(e)}", "articles": []}
+        return wrapper
+    return decorator
+@timeout(30)
 def get_medical_context(symptoms: str, min_results: int = 2):
     print(f"🔧 Pinecone index available: {pinecone_service.index is not None}")
 

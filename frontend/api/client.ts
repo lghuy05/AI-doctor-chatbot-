@@ -7,7 +7,7 @@ const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },

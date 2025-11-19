@@ -34,6 +34,19 @@ app.add_middleware(
 )
 
 
+# Add to main.py for debugging
+@app.middleware("http")
+async def debug_auth(request: Request, call_next):
+    auth_header = request.headers.get("Authorization")
+    if auth_header:
+        print(f"🔐 Token present for: {request.url.path}")
+    else:
+        print(f"🔓 No token for: {request.url.path}")
+
+    response = await call_next(request)
+    return response
+
+
 @app.middleware("http")
 async def authenticate_request(request: Request, call_next):
     if request.method == "OPTIONS":
@@ -88,19 +101,6 @@ async def log_requests(request: Request, call_next):
     except Exception as e:
         print("!!", request.url.path, repr(e))
         raise
-
-
-# Add to main.py for debugging
-@app.middleware("http")
-async def debug_auth(request: Request, call_next):
-    auth_header = request.headers.get("Authorization")
-    if auth_header:
-        print(f"🔐 Token present for: {request.url.path}")
-    else:
-        print(f"🔓 No token for: {request.url.path}")
-
-    response = await call_next(request)
-    return response
 
 
 # Include base routers

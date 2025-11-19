@@ -55,15 +55,19 @@ def enhanced_advice_with_ehr(
         raise HTTPException(400, "Possible emergency. Call emergency services now.")
 
     # 2. Get medical context (synchronous - no await needed)
-    medical_context = get_medical_context(inp.symptoms)
+    try:
+        medical_context = get_medical_context(inp.symptoms, min_results=2)
+    except Exception as e:
+        print(f"Medical context failed: {e}")
+        medical_context = {"articles": []}
 
     # 3. Get EHR data for LLM context
     ehr_context = {
         "ehr_medications": [
-            med["name"] for med in ehr_data.get("active_medications", [])[:5]
+            med["name"] for med in ehr_data.get("active_medications", [])[:3]
         ],
         "ehr_conditions": [
-            cond["name"] for cond in ehr_data.get("medical_conditions", [])[:3]
+            cond["name"] for cond in ehr_data.get("medical_conditions", [])[:2]
         ],
         "ehr_age": ehr_data.get("age"),
         "ehr_gender": ehr_data.get("gender"),
@@ -152,12 +156,12 @@ def enhanced_advice_with_ehr(
         ):
             research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
             for i, article in enumerate(
-                medical_context["articles"][:3], 1
+                medical_context["articles"][:2], 1
             ):  # Reduced to 3 for speed
                 research_text += (
                     f"{i}. {article['title']} ({article['year']}) - "
                     f"Relevance: {article.get('relevance_score', 0):.2f}\n"
-                    f"Key findings: {article['content'][:150]}...\n\n"
+                    f"Key findings: {article['content'][:100]}...\n\n"
                 )
         else:
             research_text = (
