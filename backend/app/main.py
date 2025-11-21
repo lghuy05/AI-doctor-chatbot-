@@ -56,7 +56,7 @@ async def authenticate_request(request: Request, call_next):
     public_paths = [
         "/auth/login",
         "/auth/register",
-        "/",
+        "/auth/verify/",
         "/health",
         "/docs",
         "/redoc",
