@@ -1,10 +1,10 @@
+// app/auth/register.tsx
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import axios from 'axios';
-import { authStyles } from '../styles/authStyles';
+import { authStyles, authColors } from '../styles/authStyles';
 
-// const API_BASE_URL = 'http://localhost:8000';
 const API_BASE_URL = 'https://ai-doctor-chatbot-zw8n.onrender.com';
 console.log('🔗 Using API URL:', API_BASE_URL);
 
@@ -23,12 +23,13 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [age, setAge] = useState<string>('');
   const [sex, setSex] = useState<string>('');
-  const [role, setRole] = useState<string>(''); // ← ADD THIS
+  const [role, setRole] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const passwordsMatch = password === confirmPassword;
   const isAgeValid = age !== '' && !isNaN(Number(age)) && Number(age) > 0 && Number(age) < 120;
-  const canSubmit = username && email && /.+@.+\..+/.test(email) && password.length >= 6 && passwordsMatch && isAgeValid && sex && role; // ← ADD role CHECK
+  const canSubmit = username && email && /.+@.+\..+/.test(email) && password.length >= 6 && passwordsMatch && isAgeValid && sex && role;
 
   const handleRegister = async () => {
     if (!canSubmit || loading) return;
@@ -42,7 +43,7 @@ export default function RegisterScreen() {
         password: password,
         age: parseInt(age),
         sex: sex,
-        role: role, // ← ADD THIS
+        role: role,
       });
 
       Alert.alert('Success', 'Account created successfully! Please login.');
@@ -70,24 +71,45 @@ export default function RegisterScreen() {
       </TouchableOpacity>
 
       <ScrollView style={authStyles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Hero Section */}
+        <View style={authStyles.hero}>
+          <Text style={authStyles.heroTitle}>Join Health AI</Text>
+          <Text style={authStyles.heroSubtitle}>
+            Start your personalized health journey today
+          </Text>
+        </View>
+
+        {/* Registration Form */}
         <View style={authStyles.card}>
-          <Text style={authStyles.header}>Create your account</Text>
+          <Text style={authStyles.header}>Create account</Text>
+          <Text style={authStyles.subheader}>Join our AI-powered health community</Text>
+
           <Text style={authStyles.sectionLabel}>Personal Information</Text>
 
           <TextInput
-            style={authStyles.input}
+            style={[
+              authStyles.input,
+              focusedInput === 'username' && authStyles.inputFocused
+            ]}
             placeholder="Username"
             value={username}
             onChangeText={setUsername}
+            onFocus={() => setFocusedInput('username')}
+            onBlur={() => setFocusedInput(null)}
             placeholderTextColor="#9AA5B1"
             autoCapitalize="none"
           />
 
           <TextInput
-            style={authStyles.input}
+            style={[
+              authStyles.input,
+              focusedInput === 'email' && authStyles.inputFocused
+            ]}
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
+            onFocus={() => setFocusedInput('email')}
+            onBlur={() => setFocusedInput(null)}
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor="#9AA5B1"
@@ -96,11 +118,14 @@ export default function RegisterScreen() {
           <TextInput
             style={[
               authStyles.input,
+              focusedInput === 'age' && authStyles.inputFocused,
               !isAgeValid && age !== '' && authStyles.inputError
             ]}
             placeholder="Age"
             value={age}
             onChangeText={setAge}
+            onFocus={() => setFocusedInput('age')}
+            onBlur={() => setFocusedInput(null)}
             keyboardType="numeric"
             placeholderTextColor="#9AA5B1"
           />
@@ -147,9 +172,9 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* ADD ROLE SELECTION SECTION */}
+          {/* Role Selection */}
           <View style={authStyles.genderContainer}>
-            <Text style={authStyles.genderLabel}>Role</Text>
+            <Text style={authStyles.genderLabel}>I am a</Text>
             <View style={authStyles.genderOptions}>
               <TouchableOpacity
                 style={[
@@ -187,11 +212,14 @@ export default function RegisterScreen() {
           <TextInput
             style={[
               authStyles.input,
+              focusedInput === 'password' && authStyles.inputFocused,
               !passwordsMatch && confirmPassword !== '' && authStyles.inputError
             ]}
             placeholder="Password (min. 6 characters)"
             value={password}
             onChangeText={setPassword}
+            onFocus={() => setFocusedInput('password')}
+            onBlur={() => setFocusedInput(null)}
             secureTextEntry
             placeholderTextColor="#9AA5B1"
           />
@@ -199,11 +227,14 @@ export default function RegisterScreen() {
           <TextInput
             style={[
               authStyles.input,
+              focusedInput === 'confirmPassword' && authStyles.inputFocused,
               !passwordsMatch && confirmPassword !== '' && authStyles.inputError
             ]}
             placeholder="Confirm Password"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
+            onFocus={() => setFocusedInput('confirmPassword')}
+            onBlur={() => setFocusedInput(null)}
             secureTextEntry
             placeholderTextColor="#9AA5B1"
           />
@@ -230,6 +261,33 @@ export default function RegisterScreen() {
               Sign In
             </Text>
           </Text>
+        </View>
+
+        {/* App Introduction */}
+        <View style={[authStyles.introSection, { backgroundColor: authColors.background.purple, borderLeftColor: '#8B5CF6' }]}>
+          <Text style={[authStyles.introTitle, { color: '#5B21B6' }]}>Why Join Health AI?</Text>
+          <Text style={[authStyles.introText, { color: '#6D28D9' }]}>
+            Access AI-powered medical insights, personalized health tracking, and 24/7 support from our intelligent health assistant.
+          </Text>
+
+          <View style={authStyles.featuresGrid}>
+            <View style={authStyles.featureItem}>
+              <Text style={authStyles.featureIcon}>🔒</Text>
+              <Text style={authStyles.featureLabel}>Secure Data</Text>
+            </View>
+            <View style={authStyles.featureItem}>
+              <Text style={authStyles.featureIcon}>⚕️</Text>
+              <Text style={authStyles.featureLabel}>Medical Research</Text>
+            </View>
+            <View style={authStyles.featureItem}>
+              <Text style={authStyles.featureIcon}>📱</Text>
+              <Text style={authStyles.featureLabel}>24/7 Access</Text>
+            </View>
+            <View style={authStyles.featureItem}>
+              <Text style={authStyles.featureIcon}>🤖</Text>
+              <Text style={authStyles.featureLabel}>AI Powered</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>

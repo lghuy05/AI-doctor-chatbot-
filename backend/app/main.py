@@ -5,7 +5,7 @@ import os
 from sqlalchemy import text
 from app.database.database import engine, Base
 from app.routes import triage, advice, referrals, rx_draft, auth, patient_profile, chat
-from app.services.auth_service import verify_token
+from app.services.auth_service import verify_token_service
 from dotenv import load_dotenv
 
 
@@ -80,7 +80,7 @@ async def authenticate_request(request: Request, call_next):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
 
     token = auth_header.replace("Bearer ", "")
-    payload = verify_token(token)
+    payload = verify_token_service(token)
 
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")

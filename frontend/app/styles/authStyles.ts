@@ -1,3 +1,4 @@
+// styles/authStyles.ts
 import { StyleSheet } from 'react-native';
 
 export const authStyles = StyleSheet.create({
@@ -5,8 +6,7 @@ export const authStyles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 56,
-    paddingHorizontal: 18,
-    backgroundColor: '#F4F7FA'
+    backgroundColor: '#F8FAFC'
   },
   scrollView: {
     flex: 1,
@@ -14,38 +14,78 @@ export const authStyles = StyleSheet.create({
 
   // Header styles
   back: {
-    width: 32,
-    height: 32,
+    position: 'absolute',
+    top: 56,
+    left: 20,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
-    backgroundColor: '#FFFFFFAA',
-    marginBottom: 8,
-    zIndex: 1,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 10,
   },
   backText: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
+    color: '#3B82F6',
+  },
+
+  // Hero Section
+  hero: {
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 30,
+    backgroundColor: 'linear-gradient(135deg, #A5B4FC 0%, #C4B5FD 100%)',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#0F131A',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    color: '#4B5563',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontWeight: '500',
   },
 
   // Card styles
   card: {
     backgroundColor: '#fff',
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 24,
+    margin: 20,
+    marginTop: -20,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 20,
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 20,
+    elevation: 6,
   },
   header: {
     fontSize: 28,
     fontWeight: '800',
     color: '#0F131A',
-    marginBottom: 24,
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  subheader: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 24,
+    fontWeight: '500',
   },
 
   // Section labels
@@ -60,23 +100,28 @@ export const authStyles = StyleSheet.create({
 
   // Input styles
   input: {
-    height: 52,
-    borderRadius: 12,
+    height: 56,
+    borderRadius: 16,
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     marginVertical: 8,
     fontSize: 16,
     color: '#0F131A',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#E2E8F0',
+    fontWeight: '500',
+  },
+  inputFocused: {
+    borderColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
   },
   inputError: {
     borderColor: '#EF4444',
-    borderWidth: 1,
+    borderWidth: 2,
     backgroundColor: '#FEF2F2',
   },
 
-  // Gender Selection styles
+  // Gender/Role Selection styles
   genderContainer: {
     marginVertical: 8,
   },
@@ -94,17 +139,17 @@ export const authStyles = StyleSheet.create({
   },
   genderOption: {
     flex: 1,
-    height: 48,
+    height: 52,
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#E2E8F0',
   },
   genderOptionSelected: {
-    backgroundColor: '#0F131A',
-    borderColor: '#0F131A',
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
   },
   genderOptionText: {
     color: '#64748B',
@@ -128,25 +173,26 @@ export const authStyles = StyleSheet.create({
 
   // Button styles
   submit: {
-    height: 56,
-    borderRadius: 14,
-    backgroundColor: '#0F131A',
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 24,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   submitDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
+    backgroundColor: '#9CA3AF',
   },
   submitText: {
     color: '#fff',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
 
@@ -156,9 +202,75 @@ export const authStyles = StyleSheet.create({
     marginTop: 8,
     color: '#64748B',
     fontSize: 15,
+    fontWeight: '500',
   },
   link: {
-    color: '#0F131A',
+    color: '#3B82F6',
     fontWeight: '700',
   },
+
+  // App Intro Section
+  introSection: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 20,
+    padding: 20,
+    margin: 20,
+    marginTop: 0,
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+  },
+  introTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#065F46',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  introText: {
+    fontSize: 14,
+    color: '#047857',
+    lineHeight: 20,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+
+  // Feature Highlights
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 16,
+  },
+  featureItem: {
+    width: '48%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  featureIcon: {
+    fontSize: 20,
+    marginBottom: 6,
+  },
+  featureLabel: {
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });
+
+// Color constants
+export const authColors = {
+  primary: '#3B82F6',
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  background: {
+    blue: '#EFF6FF',
+    green: '#F0FDF4',
+    orange: '#FFFBEB',
+    purple: '#F5F3FF',
+  }
+};

@@ -133,7 +133,6 @@ class FHIRService:
         print(f"   📍 Zipcode: {mock_profile['zipcode']} (mock)")
         return mock_profile
 
-    # KEEP ALL YOUR EXISTING HELPER METHODS THE SAME
     @staticmethod
     def _extract_patient_name(patient_data: Dict) -> str:
         """Extract patient name from FHIR format"""

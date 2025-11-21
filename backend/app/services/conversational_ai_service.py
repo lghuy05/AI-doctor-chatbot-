@@ -43,15 +43,12 @@ class ConversationalAIService:
         )
         conversation_text += f"\nuser: {user_message}"
 
-        def build_messages():
-            return [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": conversation_text},
-            ]
+        message = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": conversation_text},
+        ]
 
-        return require_json_with_retry(
-            build_messages
-        )  # Pass the function, not the list
+        return require_json_with_retry(message)
 
     @staticmethod
     def generate_conversational_response(
@@ -65,7 +62,8 @@ class ConversationalAIService:
         1. Have a natural, comforting conversation about health concerns
         2. Gently gather important medical information through normal conversation
         3. Build trust and make the user feel heard
-        4. ONLY offer medical analysis when the user clearly wants it and we have enough info
+        4. Giving some comments, sharing, empathy with patient
+        5. ONLY offer medical analysis when the user clearly wants it and we have enough info
 
         Gather information naturally by asking follow-up questions like:
         - "How long have you been experiencing this?"
@@ -100,16 +98,12 @@ class ConversationalAIService:
         )
 
         user_prompt = f"{current_context}Conversation history:\n{history_text}\n\nUser: {user_message}"
+        message = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
 
-        def build_messages():
-            return [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]
-
-        return require_json_with_retry(
-            build_messages
-        )  # Pass the function, not the list
+        return require_json_with_retry(message)  # Pass the function, not the list
 
     @staticmethod
     def extract_medical_context_from_conversation(
@@ -136,13 +130,9 @@ class ConversationalAIService:
         conversation_text = "\n".join(
             [f"{msg['role']}: {msg['content']}" for msg in conversation_history]
         )
+        message = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": conversation_text},
+        ]
 
-        def build_messages():
-            return [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": conversation_text},
-            ]
-
-        return require_json_with_retry(
-            build_messages
-        )  # Pass the function, not the list
+        return require_json_with_retry(message)  # Pass the function, not the list

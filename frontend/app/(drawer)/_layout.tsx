@@ -10,10 +10,11 @@ function CustomDrawerContent() {
   const { clearPatientProfile } = usePatientStore();
 
   const menuItems = [
-    { label: 'Dashboard', route: '/(drawer)/dashboard', icon: '📊' },
-    { label: 'Chat with AI', route: '/(drawer)', icon: '💬' },
+    { label: 'Home', route: '/(drawer)', icon: '📊' },
+    { label: 'Chat with AI', route: '/(drawer)/chat', icon: '💬' },
     { label: 'Analytics', route: '/(drawer)/analytics', icon: '📈' },
     { label: 'Reminders', route: '/(drawer)/reminders', icon: '⏰' },
+    { label: 'Locate medical care', route: '/(drawer)/locatemedicalcare', icon: '📍' },
     { label: 'Profile', route: '/(drawer)/profile', icon: '👤' },
   ];
 
@@ -136,15 +137,15 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="index"
         options={{
-          drawerLabel: 'Chat with AI',
-          title: 'Chat with AI',
+          drawerLabel: 'Home',
+          title: 'Home',
         }}
       />
       <Drawer.Screen
-        name="dashboard"
+        name="chat"
         options={{
-          drawerLabel: 'Dashboard',
-          title: 'Dashboard',
+          drawerLabel: 'Chat with AI',
+          title: 'Chat with AI',
         }}
       />
       <Drawer.Screen
@@ -159,6 +160,13 @@ export default function DrawerLayout() {
         options={{
           drawerLabel: 'Reminders',
           title: 'Reminders',
+        }}
+      />
+      <Drawer.Screen
+        name="locatemedicalcare"
+        options={{
+          drawerLabel: "Locate medical care",
+          title: "Locate medical care",
         }}
       />
       <Drawer.Screen

@@ -12,6 +12,7 @@ from app.services.auth_service import (
     get_password_hash,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_current_user,
+    verify_token_service,
 )
 from typing import Annotated
 
@@ -120,5 +121,15 @@ async def get_current_user_info(current_user: user_dependency):
 
 
 @router.get("/verify")
-async def verify_token(current_user: user_dependency):
-    return {"valid": True, "user": current_user.username}
+async def verify_token(token, current_user: user_dependency):
+    payload = verify_token_service(token)
+    if payload:
+        user = payload.get("sub")
+        if current_user == user:
+            return {
+                "success": True,
+                "valid": True,
+                "user": {"id": payload.get("user_id"), "user": payload.get("sub")},
+                "message": "Token is valid",
+            }
+    return {"success": True, "valid": False, "user": None, "message": "invalid token"}

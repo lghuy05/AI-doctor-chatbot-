@@ -1,5 +1,6 @@
 // storage.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../api/client";
 
 export const storeToken = async (token: string): Promise<void> => {
   try {
@@ -14,12 +15,20 @@ export const storeToken = async (token: string): Promise<void> => {
 export const getToken = async (): Promise<string | null> => {
   try {
     const token = await AsyncStorage.getItem('auth_token');
-    console.log('🔍 Retrieved token:', token ? 'YES' : 'NO');
-    return token;
-  } catch (error) {
-    console.error('❌ Error getting token:', error);
+    const verified_token = await api.post('/auth/verify', token);
+    if (verified_token.data.valid) {
+      console.log("Token valid", verified_token.data.user);
+      return "yes";
+    }
+    else {
+      return null;
+    }
+  }
+  catch (error) {
+    console.log("API call failed", error);
     return null;
   }
+
 };
 
 export const removeToken = async (): Promise<void> => {

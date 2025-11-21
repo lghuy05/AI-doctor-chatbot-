@@ -59,54 +59,30 @@ def parse_or_repair(raw: str) -> dict:
 #         return parse_or_repair(raw2)
 
 
-def require_json_with_retry(build_messages_func, max_retries=3):
-    for attempt in range(max_retries):
-        try:
-            response_text = chat_completion(build_messages_func())
+def require_json_with_retry(message):
+    try:
+        response_text = chat_completion(message)
 
-            # Try to parse as JSON first
+        parsed_response = json.loads(response_text)
+        print(f"✅ LLM returned valid JSON")
+        return parsed_response
+    except json.JSONDecodeError:
+        # If it's not JSON, try to extract JSON from the response
+        print(f"⚠️ LLM returned non-JSON response, attempting extraction")
+
+        # Look for JSON pattern in the response
+        import re
+
+        json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
+        if json_match:
             try:
-                parsed_response = json.loads(response_text)
-                print(f"✅ LLM returned valid JSON")
+                parsed_response = json.loads(json_match.group())
+                print(f"✅ Extracted JSON from response")
                 return parsed_response
             except json.JSONDecodeError:
-                # If it's not JSON, try to extract JSON from the response
-                print(f"⚠️ LLM returned non-JSON response, attempting extraction")
+                pass
 
-                # Look for JSON pattern in the response
-                import re
+        return {"raw": response_text}
 
-                json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
-                if json_match:
-                    try:
-                        parsed_response = json.loads(json_match.group())
-                        print(f"✅ Extracted JSON from response")
-                        return parsed_response
-                    except json.JSONDecodeError:
-                        pass
-
-                # Last resort - return as string
-                if attempt == max_retries - 1:
-                    print(f"❌ LLM failed to return JSON after {max_retries} attempts")
-                    return response_text
-                continue
-
-        except Exception as e:
-            error_msg = str(e)
-            print(f"❌ LLM call failed (attempt {attempt + 1}): {e}")
-
-            # Check if it's a rate limit error
-            if "Rate limit exceeded" in error_msg or "429" in error_msg:
-                print("🚨 OpenRouter rate limit exceeded - cannot retry")
-                return {
-                    "error": "I've reached my daily limit for medical analysis. Please try again tomorrow or contact support to increase the limit.",
-                    "rate_limit_exceeded": True,
-                }
-
-            if attempt == max_retries - 1:
-                return {
-                    "error": "I'm having trouble connecting to the medical analysis service. Please try again later.",
-                    "service_unavailable": True,
-                }
-
-    return {"response": "I apologize for the technical difficulty. How can I help you?"}
+    except Exception as e:
+        return {"error": str(e)}

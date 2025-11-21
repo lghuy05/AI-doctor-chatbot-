@@ -76,125 +76,122 @@ def enhanced_advice_with_ehr(
 
     print(f"📋 Using REAL EHR data from patient: {ehr_data['name']}")
 
-    def build_messages():
-        system = (
-            "You are a clinical decision support assistant. "
-            "Consider the patient's existing conditions and medications from their EHR if available. "
-            "Also consider the provided medical research context from PubMed when giving advice. "
-            "Based on the symptoms described and available medical context, provide a POSSIBLE diagnosis with reasoning. "
-            "Clearly state that this is a tentative assessment based on available information and may be incorrect. "
-            "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
-            "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty', 'persistent', 'constant', 'intermittent' to determine intensity (1-10). "
-            "Estimate duration in minutes based on time-related words like 'today','this morning','hours', 'days', 'weeks', 'constant', 'intermittent', 'few', 'several'. "
-            "CRITICAL: You MUST return valid JSON with EXACTLY these fields:\n"
-            "- possible_diagnosis: array of strings\n"
-            "- diagnosis_reasoning: string\n"
-            "- advice: array of objects with 'step' and 'details' strings\n"
-            "- when_to_seek_care: array of strings\n"
-            "- disclaimer: string\n"
-            "- symptom_analysis: object with 'intensities' array and 'overall_severity' number\n"
-            "- ai_reminder_suggestions: array of objects with these EXACT fields:\n"
-            "  * reminder_title: string (REQUIRED)\n"
-            "  * reminder_description: string (REQUIRED)\n"
-            "  * suggested_time: string (required, format like '08:00' or 'morning')\n"
-            "  * suggested_frequency: string (required, like 'daily', 'weekly')\n"
-            "  * priority: string (REQUIRED, must be 'low', 'medium', or 'high')\n\n"
-            "IMPORTANT RULES FOR JSON FORMAT:\n"
-            "1. Every field must be present, even if empty arrays/objects\n"
-            "2. All reminder objects MUST have 'reminder_title' and 'priority' at minimum\n"
-            "3. If you don't have a specific time, omit 'suggested_time' entirely\n"
-            "4. If you don't have frequency info, omit 'suggested_frequency' entirely\n"
-            "5. Do NOT include any fields not listed above\n\n"
-            "Example of valid JSON format:\n"
-            "{\n"
-            '  "possible_diagnosis": ["Tension headache", "Migraine"],\n'
-            '  "diagnosis_reasoning": "The throbbing head pain described as severe...",\n'
-            '  "advice": [{"step": "Hydration", "details": "Small sips of water."}],\n'
-            '  "when_to_seek_care": ["Trouble breathing", "Worsening headache"],\n'
-            '  "disclaimer": "THIS IS NOT A DEFINITIVE DIAGNOSIS...",\n'
-            '  "symptom_analysis": {\n'
-            '    "intensities": [\n'
-            '      {"symptom_name": "headache", "intensity": 7, "duration_minutes": 120, "notes": "Throbbing pain"}\n'
-            "    ],\n"
-            '    "overall_severity": 6\n'
-            "  },\n"
-            '  "ai_reminder_suggestions": [\n'
-            "    {\n"
-            '      "reminder_title": "Drink water",\n'
-            '      "reminder_description": "Small sips every 30 minutes",\n'
-            '      "suggested_time": "08:00",\n'
-            '      "suggested_frequency": "daily",\n'
-            '      "priority": "medium"\n'
-            "    },\n"
-            "    {\n"
-            '      "reminder_title": "Monitor symptoms",\n'
-            '      "priority": "high"\n'
-            "    }\n"
-            "  ]\n"
-            "}\n\n"
-            "STRICTLY FOLLOW THIS JSON FORMAT. DO NOT DEVIATE."
+    system = (
+        "You are a clinical decision support assistant. "
+        "Consider the patient's existing conditions and medications from their EHR if available. "
+        "Also consider the provided medical research context from PubMed when giving advice. "
+        "Based on the symptoms described and available medical context, provide a POSSIBLE diagnosis with reasoning. "
+        "Clearly state that this is a tentative assessment based on available information and may be incorrect. "
+        "Additionally, analyze the symptom intensity and estimate duration based on the patient's description. "
+        "Consider words like 'mild', 'moderate', 'severe', 'excruciating', 'unbearable', 'kinda', 'very', 'pretty', 'persistent', 'constant', 'intermittent' to determine intensity (1-10). "
+        "Estimate duration in minutes based on time-related words like 'today','this morning','hours', 'days', 'weeks', 'constant', 'intermittent', 'few', 'several'. "
+        "CRITICAL: You MUST return valid JSON with EXACTLY these fields:\n"
+        "- possible_diagnosis: array of strings\n"
+        "- diagnosis_reasoning: string\n"
+        "- advice: array of objects with 'step' and 'details' strings\n"
+        "- when_to_seek_care: array of strings\n"
+        "- disclaimer: string\n"
+        "- symptom_analysis: object with 'intensities' array and 'overall_severity' number\n"
+        "- ai_reminder_suggestions: array of objects with these EXACT fields:\n"
+        "  * reminder_title: string (REQUIRED)\n"
+        "  * reminder_description: string (REQUIRED)\n"
+        "  * suggested_time: string (required, format like '08:00' or 'morning')\n"
+        "  * suggested_frequency: string (required, like 'daily', 'weekly')\n"
+        "  * priority: string (REQUIRED, must be 'low', 'medium', or 'high')\n\n"
+        "IMPORTANT RULES FOR JSON FORMAT:\n"
+        "1. Every field must be present, even if empty arrays/objects\n"
+        "2. All reminder objects MUST have 'reminder_title' and 'priority' at minimum\n"
+        "3. If you don't have a specific time, omit 'suggested_time' entirely\n"
+        "4. If you don't have frequency info, omit 'suggested_frequency' entirely\n"
+        "5. Do NOT include any fields not listed above\n\n"
+        "Example of valid JSON format:\n"
+        "{\n"
+        '  "possible_diagnosis": ["Tension headache", "Migraine"],\n'
+        '  "diagnosis_reasoning": "The throbbing head pain described as severe...",\n'
+        '  "advice": [{"step": "Hydration", "details": "Small sips of water."}],\n'
+        '  "when_to_seek_care": ["Trouble breathing", "Worsening headache"],\n'
+        '  "disclaimer": "THIS IS NOT A DEFINITIVE DIAGNOSIS...",\n'
+        '  "symptom_analysis": {\n'
+        '    "intensities": [\n'
+        '      {"symptom_name": "headache", "intensity": 7, "duration_minutes": 120, "notes": "Throbbing pain"}\n'
+        "    ],\n"
+        '    "overall_severity": 6\n'
+        "  },\n"
+        '  "ai_reminder_suggestions": [\n'
+        "    {\n"
+        '      "reminder_title": "Drink water",\n'
+        '      "reminder_description": "Small sips every 30 minutes",\n'
+        '      "suggested_time": "08:00",\n'
+        '      "suggested_frequency": "daily",\n'
+        '      "priority": "medium"\n'
+        "    },\n"
+        "    {\n"
+        '      "reminder_title": "Monitor symptoms",\n'
+        '      "priority": "high"\n'
+        "    }\n"
+        "  ]\n"
+        "}\n\n"
+        "STRICTLY FOLLOW THIS JSON FORMAT. DO NOT DEVIATE."
+    )
+    ehr_text = ""
+    if ehr_context and (
+        ehr_context.get("ehr_medications") or ehr_context.get("ehr_conditions")
+    ):
+        ehr_text = (
+            f"EHR MEDICAL HISTORY:\n"
+            f"Current Medications: {', '.join(ehr_context.get('ehr_medications', []))}\n"
+            f"Existing Conditions: {', '.join(ehr_context.get('ehr_conditions', []))}\n"
+            f"EHR Age: {ehr_context.get('ehr_age', 'Not specified')}\n"
+            f"EHR Gender: {ehr_context.get('ehr_gender', 'Not specified')}\n\n"
         )
-        ehr_text = ""
-        if ehr_context and (
-            ehr_context.get("ehr_medications") or ehr_context.get("ehr_conditions")
-        ):
-            ehr_text = (
-                f"EHR MEDICAL HISTORY:\n"
-                f"Current Medications: {', '.join(ehr_context.get('ehr_medications', []))}\n"
-                f"Existing Conditions: {', '.join(ehr_context.get('ehr_conditions', []))}\n"
-                f"EHR Age: {ehr_context.get('ehr_age', 'Not specified')}\n"
-                f"EHR Gender: {ehr_context.get('ehr_gender', 'Not specified')}\n\n"
+    else:
+        ehr_text = "No EHR data available for this patient.\n\n"
+
+    research_text = ""
+    if (
+        medical_context
+        and "articles" in medical_context
+        and medical_context["articles"]
+    ):
+        research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
+        for i, article in enumerate(
+            medical_context["articles"][:2], 1
+        ):  # Reduced to 3 for speed
+            research_text += (
+                f"{i}. {article['title']} ({article['year']}) - "
+                f"Relevance: {article.get('relevance_score', 0):.2f}\n"
+                f"Key findings: {article['content'][:100]}...\n\n"
             )
-        else:
-            ehr_text = "No EHR data available for this patient.\n\n"
+    else:
+        research_text = "No recent medical research text available for these symptoms."
 
-        research_text = ""
-        if (
-            medical_context
-            and "articles" in medical_context
-            and medical_context["articles"]
-        ):
-            research_text = "MEDICAL RESEARCH CONTEXT (from recent PubMed Studies):\n"
-            for i, article in enumerate(
-                medical_context["articles"][:2], 1
-            ):  # Reduced to 3 for speed
-                research_text += (
-                    f"{i}. {article['title']} ({article['year']}) - "
-                    f"Relevance: {article.get('relevance_score', 0):.2f}\n"
-                    f"Key findings: {article['content'][:100]}...\n\n"
-                )
-        else:
-            research_text = (
-                "No recent medical research text available for these symptoms."
-            )
+    user = (
+        f"{ehr_text}"
+        f"{research_text}"
+        f"PATIENT-REPORTED INFORMATION:\n"
+        f"Age: {inp.age}\n"
+        f"Gender: {inp.sex}\n"
+        f"Symptoms: {inp.symptoms}\n"
+        f"Duration: {inp.duration}\n"
+        f"Patient-Reported Meds: {inp.meds}\n"
+        f"Patient-Reported Conditions: {inp.conditions}\n\n"
+        f"ANALYZE SYMPTOM INTENSITY BASED ON THIS DESCRIPTION: {inp.symptoms}\n"
+        f"ANALYZE DURATION BASED ON THIS: {inp.duration}\n\n"
+        f"Provide personalized advice considering their complete medical history.\n"
+        f"IMPORTANT: Generate realistic symptom_analysis based on the actual patient description."
+    )
 
-        user = (
-            f"{ehr_text}"
-            f"{research_text}"
-            f"PATIENT-REPORTED INFORMATION:\n"
-            f"Age: {inp.age}\n"
-            f"Gender: {inp.sex}\n"
-            f"Symptoms: {inp.symptoms}\n"
-            f"Duration: {inp.duration}\n"
-            f"Patient-Reported Meds: {inp.meds}\n"
-            f"Patient-Reported Conditions: {inp.conditions}\n\n"
-            f"ANALYZE SYMPTOM INTENSITY BASED ON THIS DESCRIPTION: {inp.symptoms}\n"
-            f"ANALYZE DURATION BASED ON THIS: {inp.duration}\n\n"
-            f"Provide personalized advice considering their complete medical history.\n"
-            f"IMPORTANT: Generate realistic symptom_analysis based on the actual patient description."
-        )
+    print("🔍 PROMPT SENT TO LLM:")
+    print(f"System: {system[:200]}...")
+    print(f"User: {user[:500]}...")
 
-        print("🔍 PROMPT SENT TO LLM:")
-        print(f"System: {system[:200]}...")
-        print(f"User: {user[:500]}...")
-
-        return [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ]
+    message = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
 
     print("🤖 Generating medical advice with EHR context...")
-    response = require_json_with_retry(build_messages)
+    response = require_json_with_retry(message)
 
     print(f"🔍 LLM RESPONSE TYPE: {type(response)}")
     print(f"🔍 LLM RESPONSE CONTENT: {response}")
