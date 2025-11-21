@@ -126,7 +126,7 @@ async def get_current_user_info(current_user: user_dependency):
     return current_user
 
 
-@router.get("/verify")
+@router.post("/verify")
 async def verify_token(token: TokenVerificationRequest, current_user: user_dependency):
     payload = verify_token_service(token)
     if payload:
