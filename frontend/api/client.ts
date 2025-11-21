@@ -17,6 +17,9 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     console.log(`🟡 Making ${config.method?.toUpperCase()} request to: ${config.url}`);
+    if (config.url?.includes('/auth/')) {
+      return config;
+    }
     try {
       const token = await getToken();
       if (token) {

@@ -161,7 +161,7 @@ async def verify_token(token: TokenVerificationRequest, db: db_dependency):
         "success": True,
         "valid": True,
         "user": {
-            "user_id": user.user_id,
+            "user_id": user.id,
             "username": user.username,
             "email": user.email,
         },
