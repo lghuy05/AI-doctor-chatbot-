@@ -5,7 +5,13 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.schemas import UserCreate, UserLogin, Token, UserResponse
+from app.schemas.schemas import (
+    UserCreate,
+    UserLogin,
+    Token,
+    UserResponse,
+    TokenVerificationRequest,
+)
 from app.services.auth_service import (
     authenticate_user,
     create_access_token,
@@ -121,7 +127,7 @@ async def get_current_user_info(current_user: user_dependency):
 
 
 @router.get("/verify")
-async def verify_token(token, current_user: user_dependency):
+async def verify_token(token: TokenVerificationRequest, current_user: user_dependency):
     payload = verify_token_service(token)
     if payload:
         user = payload.get("sub")

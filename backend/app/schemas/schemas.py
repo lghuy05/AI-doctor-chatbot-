@@ -27,6 +27,10 @@ class UserLogin(BaseModel):
     password: str
 
 
+class TokenVerificationRequest(BaseModel):
+    token: str
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str

@@ -15,7 +15,7 @@ export const storeToken = async (token: string): Promise<void> => {
 export const getToken = async (): Promise<string | null> => {
   try {
     const token = await AsyncStorage.getItem('auth_token');
-    const verified_token = await api.post('/auth/verify', token);
+    const verified_token = await api.post('/auth/verify', { token });
     if (verified_token.data.valid) {
       console.log("Token valid", verified_token.data.user);
       return "yes";
