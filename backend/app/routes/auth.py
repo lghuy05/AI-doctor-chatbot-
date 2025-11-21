@@ -127,15 +127,43 @@ async def get_current_user_info(current_user: user_dependency):
 
 
 @router.post("/verify")
-async def verify_token(token: TokenVerificationRequest, current_user: user_dependency):
-    payload = verify_token_service(token)
-    if payload:
-        user = payload.get("sub")
-        if current_user == user:
-            return {
-                "success": True,
-                "valid": True,
-                "user": {"id": payload.get("user_id"), "user": payload.get("sub")},
-                "message": "Token is valid",
-            }
-    return {"success": True, "valid": False, "user": None, "message": "invalid token"}
+async def verify_token(token: TokenVerificationRequest, db: db_dependency):
+    if not token.token:
+        return {"success": True, "valid": False, "user": None, "message": "No token"}
+    payload = verify_token_service(token.token)
+    if not payload:
+        return {
+            "success": True,
+            "valid": False,
+            "user": None,
+            "message": "invalid token",
+        }
+    username = payload.get("sub")
+    user = payload.get("user_id")
+
+    if not username:
+        return {
+            "success": True,
+            "valid": False,
+            "user": None,
+            "message": "invalid token payload",
+        }
+
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return {
+            "success": True,
+            "valid": False,
+            "user": None,
+            "message": "User not found",
+        }
+    return {
+        "success": True,
+        "valid": True,
+        "user": {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+        },
+        "message": "Token is valid",
+    }
