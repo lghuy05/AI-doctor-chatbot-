@@ -58,6 +58,7 @@ async def authenticate_request(request: Request, call_next):
         "/auth/register",
         "/auth/verify/",
         "/health",
+        "/",
         "/docs",
         "/redoc",
         "/openapi.json",
